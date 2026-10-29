@@ -1,0 +1,210 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Подключение роутера Keenetic",
+        "description": "Укажите адрес и порт RCI. Для доступа без авторизации через порт, перенаправленный на 127.0.0.1:79, оставьте логин и пароль пустыми. Ограничьте доступ к этому порту адресом Home Assistant.",
+        "data": {
+          "address": "Адрес роутера",
+          "port": "Порт",
+          "username": "Логин",
+          "password": "Пароль"
+        }
+      },
+      "reauth": {
+        "title": "Повторная авторизация Keenetic",
+        "description": "Введите логин и пароль или оставьте оба поля пустыми для доступа через перенаправленный порт RCI.",
+        "data": {
+          "address": "Адрес роутера",
+          "port": "Порт",
+          "username": "Логин",
+          "password": "Пароль"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Не удалось подключиться к роутеру.",
+      "invalid_auth": "Роутер отклонил эти учётные данные.",
+      "unsupported_response": "Узел не вернул поддерживаемый ответ Keenetic RCI.",
+      "invalid_address": "Введите корректный HTTP- или HTTPS-адрес без пути.",
+      "wrong_router": "Эти учётные данные ведут к другому роутеру."
+    },
+    "abort": {
+      "already_configured": "Этот роутер уже настроен.",
+      "reauth_successful": "Учётные данные роутера обновлены."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Настройки Keenetic",
+        "data": {
+          "scan_interval": "Интервал опроса (секунды)",
+          "clients": "Выбранные клиенты",
+          "policy_clients": "Клиенты с селекторами политик",
+          "allow_mutating_rci": "Разрешить произвольные POST-запросы RCI",
+          "wifi_enabled_access_points": "Включённые сети Wi-Fi",
+          "sms_target": "Получатель SMS по умолчанию"
+        },
+        "data_description": {
+          "clients": "Выберите обнаруженные устройства или введите MAC-адреса вручную.",
+          "policy_clients": "Отдельный список устройств, которым нужно управление IP-политикой.",
+          "allow_mutating_rci": "Расширенная настройка. POST может менять конфигурацию роутера или запускать команды.",
+          "wifi_enabled_access_points": "Отметьте сети, которые должны остаться включёнными. Снятые сети будут выключены при сохранении."
+        }
+      }
+    },
+    "error": {
+      "invalid_mac": "Введите MAC-адреса клиентов в формате aa:bb:cc:dd:ee:ff.",
+      "wifi_update_failed": "Не удалось изменить состояние Wi-Fi. Проверьте соединение с роутером и повторите попытку."
+    }
+  },
+  "services": {
+    "request_api": {
+      "name": "Запрос к API RCI",
+      "description": "Выберите роутер в цели действия или укажите entry_id. GET читает данные. POST требует расширенной настройки интеграции и может менять конфигурацию роутера.",
+      "fields": {
+        "entry_id": {"name": "ID записи интеграции"},
+        "method": {"name": "Метод"},
+        "endpoint": {"name": "Конечная точка RCI"},
+        "data_json": {"name": "Данные JSON-запроса"}
+      }
+    },
+    "list_sms": {
+      "name": "Список SMS",
+      "description": "Выберите роутер в цели действия или укажите entry_id. Прочитать сообщения, не меняя их признак прочтения.",
+      "fields": {
+        "entry_id": {"name": "ID записи интеграции"},
+        "interface": {"name": "Интерфейс модема"}
+      }
+    },
+    "mark_sms_read": {
+      "name": "Отметить SMS прочитанным",
+      "description": "Выберите роутер в цели действия или укажите entry_id. Отметить одно SMS прочитанным на выбранном модеме.",
+      "fields": {
+        "entry_id": {"name": "ID записи интеграции"},
+        "interface": {"name": "Интерфейс модема"},
+        "sms_id": {"name": "ID сообщения"}
+      }
+    },
+    "send_ussd": {
+      "name": "Отправить USSD-запрос",
+      "description": "Выберите ровно один модем Keenetic в цели действия. Операция ограничена 60 секундами.",
+      "fields": {
+        "request": {"name": "USSD-запрос"}
+      }
+    },
+    "send_sms": {
+      "name": "Отправить SMS",
+      "description": "Выберите ровно один SMS-модем Keenetic в цели действия. Явный получатель заменяет номер по умолчанию.",
+      "fields": {
+        "message": {"name": "Сообщение"},
+        "recipient": {"name": "Получатель или получатели"}
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "router_available": {"name": "Роутер доступен"},
+      "internet_available": {"name": "Интернет доступен"},
+      "gateway_accessible": {"name": "Шлюз интернета доступен"},
+      "dns_accessible": {"name": "DNS интернета доступен"},
+      "internet_hosts_accessible": {"name": "Проверочные узлы интернета доступны"},
+      "usb_storage_detected": {"name": "USB-накопитель смонтирован"},
+      "vpn_connected": {"name": "Подключение"},
+      "wireguard_peer_online": {"name": "{peer}: в сети"},
+      "modem_connected": {"name": "Подключение"},
+      "modem_plugged": {"name": "Физическое подключение"},
+      "modem_roaming": {"name": "Роуминг"},
+      "modem_data_limit_exceeded": {"name": "Превышен лимит мобильного трафика"},
+      "modem_data_threshold_exceeded": {"name": "Достигнут порог мобильного трафика"},
+      "client_dhcp_registered": {"name": "Зарегистрирован DHCP"},
+      "client_link_status": {"name": "Состояние связи"}
+    },
+    "button": {
+      "reboot": {"name": "Перезагрузить роутер"},
+      "restart_modem": {"name": "Перезапустить модем"},
+      "client_clear_bandwidth_limit": {"name": "Сбросить лимит скорости"},
+      "client_wake_on_lan": {"name": "Wake on LAN"}
+    },
+    "switch": {
+      "vpn_enabled": {"name": "Включено"}
+    },
+    "select": {
+      "client_policy": {"name": "Политика IP"}
+    },
+    "number": {
+      "client_bandwidth_limit": {"name": "Ограничение скорости"}
+    },
+    "sensor": {
+      "cpu_load": {"name": "Загрузка CPU"},
+      "memory_used": {"name": "Занятая память"},
+      "uptime": {"name": "Время работы"},
+      "router_temperature": {"name": "Температура"},
+      "wan_received_rate": {"name": "Скорость загрузки WAN"},
+      "wan_sent_rate": {"name": "Скорость отдачи WAN"},
+      "wifi_clients": {"name": "Подключённые клиенты Wi-Fi"},
+      "default_route_interface": {"name": "Интерфейс маршрута по умолчанию"},
+      "default_route_ip": {"name": "IP интерфейса маршрута по умолчанию"},
+      "firmware_version": {"name": "Версия прошивки"},
+      "port_status": {"name": "Порт {port}: состояние"},
+      "dns_proxy_status": {"name": "Состояние DNS Proxy"},
+      "dns_proxy_failed_requests": {"name": "Ошибки DNS Proxy"},
+      "ipsec_vici_status": {"name": "Состояние IPsec VICI"},
+      "ipsec_vici_out_of_memory": {"name": "Ошибки памяти IPsec VICI"},
+      "vpn_uptime": {"name": "Время работы"},
+      "vpn_received_data": {"name": "Получено данных"},
+      "vpn_sent_data": {"name": "Отправлено данных"},
+      "vpn_received_rate": {"name": "Скорость приёма"},
+      "vpn_sent_rate": {"name": "Скорость передачи"},
+      "modem_uptime": {"name": "Время работы"},
+      "modem_received_data": {"name": "Получено данных"},
+      "modem_sent_data": {"name": "Отправлено данных"},
+      "modem_received_rate": {"name": "Скорость приёма"},
+      "modem_sent_rate": {"name": "Скорость передачи"},
+      "modem_rssi": {"name": "RSSI"},
+      "modem_rsrp": {"name": "RSRP"},
+      "modem_rsrq": {"name": "RSRQ"},
+      "modem_sinr": {"name": "SINR / CINR"},
+      "modem_operator": {"name": "Оператор"},
+      "modem_technology": {"name": "Технология сети"},
+      "modem_signal_level": {"name": "Уровень сигнала"},
+      "modem_band": {"name": "Диапазон"},
+      "modem_connection_state": {"name": "Состояние подключения"},
+      "modem_apn": {"name": "Точка доступа APN"},
+      "modem_temperature": {"name": "Температура"},
+      "modem_data_used": {"name": "Использовано данных"},
+      "modem_data_remaining": {"name": "Остаток трафика"},
+      "modem_data_limit": {"name": "Лимит трафика"},
+      "modem_data_threshold": {"name": "Порог трафика"},
+      "modem_days_until_reset": {"name": "Дней до сброса счётчика"},
+      "modem_quota_usage": {"name": "Использовано лимита"},
+      "unread_sms": {"name": "Непрочитанные SMS"},
+      "mesh_firmware_version": {"name": "Версия прошивки"},
+      "mesh_uptime": {"name": "Время работы"},
+      "mesh_associations": {"name": "Подключённые клиенты"},
+      "mesh_backhaul_speed": {"name": "Скорость связи с контроллером"},
+      "mesh_backhaul_uplink": {"name": "Интерфейс связи с контроллером"},
+      "mesh_backhaul_ap": {"name": "Точка доступа backhaul"},
+      "mesh_backhaul_rssi": {"name": "RSSI связи с контроллером"},
+      "mesh_backhaul_txrate": {"name": "Скорость передачи backhaul"},
+      "wireguard_peer_received_data": {"name": "{peer}: получено данных"},
+      "wireguard_peer_sent_data": {"name": "{peer}: отправлено данных"},
+      "wireguard_peer_remote_endpoint": {"name": "{peer}: удалённый endpoint"},
+      "wireguard_peer_handshake": {"name": "{peer}: возраст последнего handshake"},
+      "client_connection_type": {"name": "Тип подключения"},
+      "client_ip": {"name": "IP"},
+      "client_port": {"name": "Порт"},
+      "client_first_seen": {"name": "Первое обнаружение"},
+      "client_last_seen": {"name": "Последнее обнаружение"},
+      "client_link_speed": {"name": "Скорость связи"},
+      "client_received_data": {"name": "Принято"},
+      "client_sent_data": {"name": "Отправлено"},
+      "client_rssi": {"name": "RSSI"},
+      "client_tx_rate": {"name": "Скорость передачи"},
+      "client_uptime": {"name": "Время подключения"},
+      "client_wifi_band": {"name": "Диапазон Wi-Fi"},
+      "client_wifi_mode": {"name": "Режим Wi-Fi"}
+    }
+  }
+}

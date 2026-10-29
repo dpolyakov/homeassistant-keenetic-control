@@ -1,0 +1,210 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect a Keenetic router",
+        "description": "Enter the RCI address and port. For unauthenticated access through a port forwarded to 127.0.0.1:79, leave username and password empty. Restrict that port to the Home Assistant address.",
+        "data": {
+          "address": "Router address",
+          "port": "Port",
+          "username": "Username",
+          "password": "Password"
+        }
+      },
+      "reauth": {
+        "title": "Reauthenticate Keenetic router",
+        "description": "Enter the username and password, or leave both empty for access through the forwarded RCI port.",
+        "data": {
+          "address": "Router address",
+          "port": "Port",
+          "username": "Username",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the router.",
+      "invalid_auth": "The router rejected these credentials.",
+      "unsupported_response": "The host did not return a supported Keenetic RCI response.",
+      "invalid_address": "Enter a valid HTTP or HTTPS address without a path.",
+      "wrong_router": "These credentials connect to a different router."
+    },
+    "abort": {
+      "already_configured": "This router is already configured.",
+      "reauth_successful": "Router credentials updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Keenetic options",
+        "data": {
+          "scan_interval": "Polling interval (seconds)",
+          "clients": "Selected clients",
+          "policy_clients": "Clients with policy selectors",
+          "allow_mutating_rci": "Allow arbitrary RCI POST requests",
+          "wifi_enabled_access_points": "Enabled Wi-Fi networks",
+          "sms_target": "Default SMS recipient"
+        },
+        "data_description": {
+          "clients": "Select discovered clients or enter MAC addresses manually.",
+          "policy_clients": "Independent list of clients that need an IP-policy control.",
+          "allow_mutating_rci": "Advanced option. POST may change router configuration or start commands.",
+          "wifi_enabled_access_points": "Select the networks that should remain enabled. Unselected networks will be turned off when you save."
+        }
+      }
+    },
+    "error": {
+      "invalid_mac": "Enter client MAC addresses as aa:bb:cc:dd:ee:ff.",
+      "wifi_update_failed": "Could not change Wi-Fi state. Check the router connection and try again."
+    }
+  },
+  "services": {
+    "request_api": {
+      "name": "Request RCI API",
+      "description": "Select one router as the action target or provide entry_id. GET reads data. POST requires the advanced integration option and can change router configuration.",
+      "fields": {
+        "entry_id": {"name": "Config entry ID"},
+        "method": {"name": "Method"},
+        "endpoint": {"name": "RCI endpoint"},
+        "data_json": {"name": "JSON request data"}
+      }
+    },
+    "list_sms": {
+      "name": "List SMS",
+      "description": "Select one router as the action target or provide entry_id. Read SMS messages without changing their read state.",
+      "fields": {
+        "entry_id": {"name": "Config entry ID"},
+        "interface": {"name": "Modem interface"}
+      }
+    },
+    "mark_sms_read": {
+      "name": "Mark SMS as read",
+      "description": "Select one router as the action target or provide entry_id. Mark one SMS as read on a selected modem.",
+      "fields": {
+        "entry_id": {"name": "Config entry ID"},
+        "interface": {"name": "Modem interface"},
+        "sms_id": {"name": "SMS ID"}
+      }
+    },
+    "send_ussd": {
+      "name": "Send USSD request",
+      "description": "Select exactly one Keenetic modem as the action target. The operation has a 60-second deadline.",
+      "fields": {
+        "request": {"name": "USSD request"}
+      }
+    },
+    "send_sms": {
+      "name": "Send SMS",
+      "description": "Select exactly one SMS-capable Keenetic modem as the action target. An explicit recipient replaces the configured default.",
+      "fields": {
+        "message": {"name": "Message"},
+        "recipient": {"name": "Recipient or recipients"}
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "router_available": {"name": "Router reachable"},
+      "internet_available": {"name": "Internet available"},
+      "gateway_accessible": {"name": "Internet gateway accessible"},
+      "dns_accessible": {"name": "Internet DNS accessible"},
+      "internet_hosts_accessible": {"name": "Internet check hosts accessible"},
+      "usb_storage_detected": {"name": "USB storage mounted"},
+      "vpn_connected": {"name": "Connected"},
+      "wireguard_peer_online": {"name": "{peer} online"},
+      "modem_connected": {"name": "Connected"},
+      "modem_plugged": {"name": "Physically connected"},
+      "modem_roaming": {"name": "Roaming"},
+      "modem_data_limit_exceeded": {"name": "Mobile data limit exceeded"},
+      "modem_data_threshold_exceeded": {"name": "Mobile data threshold exceeded"},
+      "client_dhcp_registered": {"name": "DHCP registered"},
+      "client_link_status": {"name": "Link status"}
+    },
+    "button": {
+      "reboot": {"name": "Reboot router"},
+      "restart_modem": {"name": "Restart modem"},
+      "client_clear_bandwidth_limit": {"name": "Clear bandwidth limit"},
+      "client_wake_on_lan": {"name": "Wake on LAN"}
+    },
+    "switch": {
+      "vpn_enabled": {"name": "Enabled"}
+    },
+    "select": {
+      "client_policy": {"name": "IP policy"}
+    },
+    "number": {
+      "client_bandwidth_limit": {"name": "Bandwidth limit"}
+    },
+    "sensor": {
+      "cpu_load": {"name": "CPU load"},
+      "memory_used": {"name": "Memory used"},
+      "uptime": {"name": "Uptime"},
+      "router_temperature": {"name": "Temperature"},
+      "wan_received_rate": {"name": "WAN download rate"},
+      "wan_sent_rate": {"name": "WAN upload rate"},
+      "wifi_clients": {"name": "Connected Wi-Fi clients"},
+      "default_route_interface": {"name": "Default route interface"},
+      "default_route_ip": {"name": "Default route interface IP"},
+      "firmware_version": {"name": "Firmware version"},
+      "port_status": {"name": "Port {port}: status"},
+      "dns_proxy_status": {"name": "DNS Proxy status"},
+      "dns_proxy_failed_requests": {"name": "DNS Proxy failed requests"},
+      "ipsec_vici_status": {"name": "IPsec VICI status"},
+      "ipsec_vici_out_of_memory": {"name": "IPsec VICI out-of-memory events"},
+      "vpn_uptime": {"name": "Uptime"},
+      "vpn_received_data": {"name": "Received data"},
+      "vpn_sent_data": {"name": "Sent data"},
+      "vpn_received_rate": {"name": "Received rate"},
+      "vpn_sent_rate": {"name": "Sent rate"},
+      "modem_uptime": {"name": "Uptime"},
+      "modem_received_data": {"name": "Received data"},
+      "modem_sent_data": {"name": "Sent data"},
+      "modem_received_rate": {"name": "Received rate"},
+      "modem_sent_rate": {"name": "Sent rate"},
+      "modem_rssi": {"name": "RSSI"},
+      "modem_rsrp": {"name": "RSRP"},
+      "modem_rsrq": {"name": "RSRQ"},
+      "modem_sinr": {"name": "SINR / CINR"},
+      "modem_operator": {"name": "Operator"},
+      "modem_technology": {"name": "Network technology"},
+      "modem_signal_level": {"name": "Signal level"},
+      "modem_band": {"name": "Band"},
+      "modem_connection_state": {"name": "Connection state"},
+      "modem_apn": {"name": "APN"},
+      "modem_temperature": {"name": "Temperature"},
+      "modem_data_used": {"name": "Data used"},
+      "modem_data_remaining": {"name": "Data remaining"},
+      "modem_data_limit": {"name": "Data limit"},
+      "modem_data_threshold": {"name": "Data threshold"},
+      "modem_days_until_reset": {"name": "Days until reset"},
+      "modem_quota_usage": {"name": "Quota usage"},
+      "unread_sms": {"name": "Unread SMS"},
+      "mesh_firmware_version": {"name": "Firmware version"},
+      "mesh_uptime": {"name": "Uptime"},
+      "mesh_associations": {"name": "Associated clients"},
+      "mesh_backhaul_speed": {"name": "Backhaul link speed"},
+      "mesh_backhaul_uplink": {"name": "Backhaul uplink"},
+      "mesh_backhaul_ap": {"name": "Backhaul access point"},
+      "mesh_backhaul_rssi": {"name": "Backhaul RSSI"},
+      "mesh_backhaul_txrate": {"name": "Backhaul transmit rate"},
+      "wireguard_peer_received_data": {"name": "{peer} received data"},
+      "wireguard_peer_sent_data": {"name": "{peer} sent data"},
+      "wireguard_peer_remote_endpoint": {"name": "{peer} remote endpoint"},
+      "wireguard_peer_handshake": {"name": "{peer} last handshake age"},
+      "client_connection_type": {"name": "Connection type"},
+      "client_ip": {"name": "IP"},
+      "client_port": {"name": "Port"},
+      "client_first_seen": {"name": "First seen"},
+      "client_last_seen": {"name": "Last seen"},
+      "client_link_speed": {"name": "Link speed"},
+      "client_received_data": {"name": "Received"},
+      "client_sent_data": {"name": "Sent"},
+      "client_rssi": {"name": "RSSI"},
+      "client_tx_rate": {"name": "Transmit rate"},
+      "client_uptime": {"name": "Connection time"},
+      "client_wifi_band": {"name": "Wi-Fi band"},
+      "client_wifi_mode": {"name": "Wi-Fi mode"}
+    }
+  }
+}

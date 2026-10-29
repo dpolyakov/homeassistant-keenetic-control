@@ -1,0 +1,73 @@
+request_api:
+  target:
+    device: {}
+  fields:
+    entry_id:
+      selector:
+        config_entry:
+          integration: keenetic_control
+    method:
+      required: true
+      selector:
+        select:
+          options:
+            - GET
+            - POST
+    endpoint:
+      required: true
+      selector:
+        text: {}
+    data_json:
+      selector:
+        text:
+          multiline: true
+
+list_sms:
+  target:
+    device: {}
+  fields:
+    entry_id:
+      selector:
+        config_entry:
+          integration: keenetic_control
+    interface:
+      selector:
+        text: {}
+
+mark_sms_read:
+  target:
+    device: {}
+  fields:
+    entry_id:
+      selector:
+        config_entry:
+          integration: keenetic_control
+    interface:
+      selector:
+        text: {}
+    sms_id:
+      required: true
+      selector:
+        text: {}
+
+send_ussd:
+  target:
+    device: {}
+  fields:
+    request:
+      required: true
+      selector:
+        text: {}
+
+send_sms:
+  target:
+    device: {}
+  fields:
+    message:
+      required: true
+      selector:
+        text:
+          multiline: true
+    recipient:
+      selector:
+        text: {}

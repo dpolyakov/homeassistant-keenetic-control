@@ -1,0 +1,15 @@
+{
+  "domain": "keenetic_control",
+  "name": "Keenetic Control",
+  "version": "0.1.0",
+  "config_flow": true,
+  "homeassistant": "2026.9.0",
+  "iot_class": "local_polling",
+  "requirements": [],
+  "integration_type": "hub",
+  "codeowners": [
+    "@dpolyakov"
+  ],
+  "documentation": "https://github.com/dpolyakov/homeassistant-keenetic-control",
+  "issue_tracker": "https://github.com/dpolyakov/homeassistant-keenetic-control/issues"
+}

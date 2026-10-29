@@ -1,0 +1,138 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "router_available": {"default": "mdi:router-wireless"},
+      "internet_available": {"default": "mdi:web"},
+      "gateway_accessible": {"default": "mdi:router-network"},
+      "dns_accessible": {"default": "mdi:dns"},
+      "internet_hosts_accessible": {"default": "mdi:server-network"},
+      "usb_storage_detected": {"default": "mdi:usb-flash-drive-outline"},
+      "vpn_connected": {"default": "mdi:vpn"},
+      "wireguard_peer_online": {"default": "mdi:lan-connect"},
+      "modem_connected": {"default": "mdi:access-point-network"},
+      "modem_plugged": {"default": "mdi:usb"},
+      "modem_roaming": {"default": "mdi:signal-variant"},
+      "modem_data_limit_exceeded": {"default": "mdi:alert"},
+      "modem_data_threshold_exceeded": {"default": "mdi:alert-outline"},
+      "client_dhcp_registered": {"default": "mdi:check-network-outline"},
+      "client_link_status": {"default": "mdi:link-variant"}
+    },
+    "button": {
+      "reboot": {"default": "mdi:restart"},
+      "restart_modem": {"default": "mdi:restart"},
+      "client_clear_bandwidth_limit": {"default": "mdi:format-clear"},
+      "client_wake_on_lan": {"default": "mdi:lan-connect"}
+    },
+    "select": {
+      "client_policy": {"default": "mdi:account-network"}
+    },
+    "number": {
+      "client_bandwidth_limit": {"default": "mdi:speedometer"}
+    },
+    "switch": {
+      "vpn_enabled": {"default": "mdi:vpn"}
+    },
+    "sensor": {
+      "cpu_load": {"default": "mdi:cpu-64-bit"},
+      "memory_used": {"default": "mdi:memory"},
+      "uptime": {"default": "mdi:clock-start"},
+      "router_temperature": {"default": "mdi:thermometer"},
+      "wan_received_rate": {"default": "mdi:download-network"},
+      "wan_sent_rate": {"default": "mdi:upload-network"},
+      "wifi_clients": {"default": "mdi:wifi"},
+      "default_route_interface": {"default": "mdi:routes"},
+      "default_route_ip": {"default": "mdi:ip"},
+      "firmware_version": {"default": "mdi:book-information-variant"},
+      "port_status": {"default": "mdi:ethernet"},
+      "dns_proxy_status": {"default": "mdi:dns"},
+      "dns_proxy_failed_requests": {"default": "mdi:alert-circle-outline"},
+      "ipsec_vici_status": {"default": "mdi:shield-lock"},
+      "ipsec_vici_out_of_memory": {"default": "mdi:memory"},
+      "vpn_uptime": {"default": "mdi:clock-start"},
+      "vpn_received_data": {"default": "mdi:download-network"},
+      "vpn_sent_data": {"default": "mdi:upload-network"},
+      "vpn_received_rate": {"default": "mdi:download-network"},
+      "vpn_sent_rate": {"default": "mdi:upload-network"},
+      "modem_uptime": {"default": "mdi:clock-start"},
+      "modem_received_data": {"default": "mdi:download-network"},
+      "modem_sent_data": {"default": "mdi:upload-network"},
+      "modem_received_rate": {"default": "mdi:download-network"},
+      "modem_sent_rate": {"default": "mdi:upload-network"},
+      "modem_rssi": {
+        "default": "mdi:signal-cellular-outline",
+        "range": {
+          "-90": "mdi:signal-cellular-outline",
+          "-89.999999": "mdi:signal-cellular-1",
+          "-85": "mdi:signal-cellular-2",
+          "-75": "mdi:signal-cellular-3"
+        }
+      },
+      "modem_rsrp": {
+        "default": "mdi:signal-cellular-outline",
+        "range": {
+          "-100": "mdi:signal-cellular-outline",
+          "-99.999999": "mdi:signal-cellular-1",
+          "-90": "mdi:signal-cellular-2",
+          "-80": "mdi:signal-cellular-3"
+        }
+      },
+      "modem_rsrq": {
+        "default": "mdi:signal-cellular-outline",
+        "range": {
+          "-20": "mdi:signal-cellular-outline",
+          "-19.999999": "mdi:signal-cellular-1",
+          "-15": "mdi:signal-cellular-2",
+          "-10": "mdi:signal-cellular-3"
+        }
+      },
+      "modem_sinr": {
+        "default": "mdi:signal-cellular-outline",
+        "range": {
+          "0": "mdi:signal-cellular-outline",
+          "0.000001": "mdi:signal-cellular-1",
+          "10": "mdi:signal-cellular-2",
+          "20": "mdi:signal-cellular-3"
+        }
+      },
+      "modem_operator": {"default": "mdi:access-point-network"},
+      "modem_technology": {"default": "mdi:signal-4g"},
+      "modem_signal_level": {"default": "mdi:signal"},
+      "modem_band": {"default": "mdi:radio-tower"},
+      "modem_connection_state": {"default": "mdi:connection"},
+      "modem_apn": {"default": "mdi:web"},
+      "modem_temperature": {"default": "mdi:thermometer"},
+      "modem_data_used": {"default": "mdi:database-arrow-up"},
+      "modem_data_remaining": {"default": "mdi:database-clock"},
+      "modem_data_limit": {"default": "mdi:database-lock"},
+      "modem_data_threshold": {"default": "mdi:database-alert"},
+      "modem_days_until_reset": {"default": "mdi:calendar-clock"},
+      "modem_quota_usage": {"default": "mdi:gauge"},
+      "unread_sms": {"default": "mdi:message-text"},
+      "mesh_firmware_version": {"default": "mdi:book-information-variant"},
+      "mesh_uptime": {"default": "mdi:clock-start"},
+      "mesh_associations": {"default": "mdi:access-point-network"},
+      "mesh_backhaul_speed": {"default": "mdi:speedometer"},
+      "mesh_backhaul_uplink": {"default": "mdi:lan-connect"},
+      "mesh_backhaul_ap": {"default": "mdi:access-point"},
+      "mesh_backhaul_rssi": {"default": "mdi:wifi"},
+      "mesh_backhaul_txrate": {"default": "mdi:upload-network"},
+      "wireguard_peer_received_data": {"default": "mdi:download-network"},
+      "wireguard_peer_sent_data": {"default": "mdi:upload-network"},
+      "wireguard_peer_remote_endpoint": {"default": "mdi:ip"},
+      "wireguard_peer_handshake": {"default": "mdi:clock-outline"},
+      "client_connection_type": {"default": "mdi:lan-connect"},
+      "client_ip": {"default": "mdi:ip"},
+      "client_port": {"default": "mdi:ethernet"},
+      "client_first_seen": {"default": "mdi:clock-outline"},
+      "client_last_seen": {"default": "mdi:clock-outline"},
+      "client_link_speed": {"default": "mdi:speedometer"},
+      "client_received_data": {"default": "mdi:download-network"},
+      "client_sent_data": {"default": "mdi:upload-network"},
+      "client_rssi": {"default": "mdi:wifi-strength-2"},
+      "client_tx_rate": {"default": "mdi:upload-network"},
+      "client_uptime": {"default": "mdi:clock-start"},
+      "client_wifi_band": {"default": "mdi:signal"},
+      "client_wifi_mode": {"default": "mdi:wifi-settings"}
+    }
+  }
+}
