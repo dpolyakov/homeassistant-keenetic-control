@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -u
+
+cd "$(dirname "$0")/.." || exit 1
+
+if [[ ! -x .venv/bin/python ]]; then
+  ./scripts/bootstrap || exit 1
+fi
+
+PYTHON=.venv/bin/python
+RUFF=.venv/bin/ruff
+FAILED=0
+
+run_check() {
+  echo "+ $*"
+  "$@" || FAILED=1
+}
+
+check_json() {
+  echo "+ json $1"
+  "$PYTHON" -m json.tool "$1" >/dev/null || FAILED=1
+}
+
+run_check "$PYTHON" -c 'import sys; from homeassistant.const import __version__ as ha; assert sys.version_info >= (3, 14, 2); assert ha.startswith("2026.9."), ha'
+run_check "$PYTHON" -m unittest discover -s tests -q
+run_check "$PYTHON" -m pytest tests/ha -q
+run_check env PYTHONPYCACHEPREFIX="$PWD/.venv/pycache" "$PYTHON" -m compileall -q custom_components tests
+run_check "$PYTHON" -c 'from pathlib import Path; import yaml; yaml.safe_load(Path(".github/workflows/checks.yml").read_text())'
+
+for file in custom_components/keenetic_control/manifest.json \
+            custom_components/keenetic_control/translations/en.json \
+            custom_components/keenetic_control/translations/ru.json \
+            custom_components/keenetic_control/icons.json \
+            tests/fixtures/rci/*.json; do
+  check_json "$file"
+done
+
+run_check "$RUFF" check --select E4,E9,F --ignore F841 custom_components tests
+run_check "$RUFF" check tests/test_rci_fixtures.py tests/ha
+run_check "$RUFF" format --check tests/test_rci_fixtures.py tests/ha
+run_check git diff --check
+run_check git diff --cached --check
+if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+  if [[ -n "${GITHUB_BASE_REF:-}" ]]; then
+    run_check git diff --check "origin/${GITHUB_BASE_REF}...HEAD"
+  elif git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+    run_check git diff --check HEAD^ HEAD
+  fi
+fi
+
+exit "$FAILED"

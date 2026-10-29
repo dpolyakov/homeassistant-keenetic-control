@@ -41,6 +41,8 @@ if "yarl" not in sys.modules and importlib.util.find_spec("yarl") is None:
     yarl.URL = str
     sys.modules["yarl"] = yarl
 
+from yarl import URL
+
 _PACKAGE_PATH = Path(__file__).parents[1] / "custom_components" / "keenetic_control"
 _PACKAGE_NAME = "custom_components.keenetic_control"
 if _PACKAGE_NAME not in sys.modules:
@@ -63,7 +65,7 @@ class _Response:
         self.payload = payload
         self.headers = headers or {"Content-Type": content_type}
         self.cookies = {}
-        self.url = "http://router"
+        self.url = URL("http://router")
 
     async def __aenter__(self):
         return self
@@ -94,7 +96,7 @@ class _Session:
     def _response(response, url):
         if isinstance(response, Exception):
             raise response
-        response.url = url
+        response.url = URL(url)
         return response
 
     def request(self, method, url, **kwargs):

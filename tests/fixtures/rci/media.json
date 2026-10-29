@@ -1,0 +1,12 @@
+{
+  "Media0": {
+    "state": "ACTIVE",
+    "partition": [
+      {
+        "state": "MOUNTED",
+        "total": "2048",
+        "free": "1024"
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "Usb0": {
+    "subsystem": "media"
+  },
+  "Usb1": {
+    "subsystem": "modem"
+  }
+}

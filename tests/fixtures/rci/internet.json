@@ -1,0 +1,8 @@
+{
+  "enabled": false,
+  "reliable": true,
+  "internet": true,
+  "gateway-accessible": true,
+  "dns-accessible": true,
+  "captive-accessible": true
+}

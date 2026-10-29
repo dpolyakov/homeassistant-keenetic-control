@@ -1,0 +1,33 @@
+{
+  "show/version": {
+    "model": "Fixture router",
+    "manufacturer": "Keenetic",
+    "release": "4.3.5"
+  },
+  "show/system": {
+    "cpuload": "7",
+    "memory": "128/256",
+    "uptime": "3600"
+  },
+  "show/interface": {
+    "Home": {
+      "id": "Bridge0",
+      "type": "Bridge",
+      "interface-name": "Home",
+      "link": "up"
+    }
+  },
+  "show/ip/route": {
+    "route": []
+  },
+  "show/ip/policy": {
+    "policy": []
+  },
+  "ip/traffic-shape/host": {},
+  "show/mws/member": {
+    "member": []
+  },
+  "show/mws/associations": {},
+  "show/dns-proxy": {},
+  "show/system/cpustat": {}
+}

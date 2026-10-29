@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+if ! command -v python3.14 >/dev/null 2>&1; then
+  echo "Python 3.14.2+ is required; install python@3.14 first." >&2
+  exit 1
+fi
+
+python3.14 -c 'import sys; assert sys.version_info >= (3, 14, 2), "Python 3.14.2+ is required"'
+
+if [[ ! -x .venv/bin/python ]]; then
+  python3.14 -m venv .venv
+fi
+
+.venv/bin/python -c 'import sys; assert sys.version_info >= (3, 14, 2), "Recreate .venv with Python 3.14.2+"'
+.venv/bin/python -m pip install -r requirements-dev.txt

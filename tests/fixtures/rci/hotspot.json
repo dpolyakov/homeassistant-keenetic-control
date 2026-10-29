@@ -1,0 +1,21 @@
+{
+  "host": [
+    {
+      "active": true,
+      "interface": {"id": "WifiMaster0/AccessPoint0", "name": "Wi-Fi"},
+      "link": {"state": "up", "rssi": "-62"}
+    },
+    {
+      "active": "yes",
+      "interface": "WifiMaster1/AccessPoint0"
+    },
+    {
+      "active": true,
+      "interface": "GigabitEthernet0/1"
+    },
+    {
+      "active": false,
+      "interface": "WifiMaster0/AccessPoint0"
+    }
+  ]
+}
