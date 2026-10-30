@@ -207,6 +207,7 @@ class RegistryCleanupTests(unittest.TestCase):
         entities = [
             _Entity("sensor.modem_sms", "router_modem_UsbQmi0_unread_sms", "entry-1"),
             _Entity("button.modem_restart", "router_modem_UsbQmi0_restart", "entry-1"),
+            _Entity("switch.modem_enabled", "router_modem_UsbQmi0_enabled", "entry-1"),
         ]
         device = _Device(
             "modem-device",
@@ -225,7 +226,7 @@ class RegistryCleanupTests(unittest.TestCase):
 
         self.assertCountEqual(
             hass.entity_registry.removed,
-            ["sensor.modem_sms", "button.modem_restart"],
+            ["sensor.modem_sms", "button.modem_restart", "switch.modem_enabled"],
         )
         self.assertEqual(hass.device_registry.removed, ["modem-device"])
         self.assertEqual(removed, {entity.unique_id for entity in entities})

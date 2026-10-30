@@ -33,6 +33,17 @@ ENTITY_MODEL = _load("entity_model")
 
 
 class InterfaceEntityModelTests(unittest.TestCase):
+    def test_disabled_cdc_ethernet_is_a_modem_with_known_admin_state(self):
+        model = ENTITY_MODEL.build_interface_entity_model(
+            [{"id": "CdcEthernet0", "type": "CdcEthernet", "description": "Huawei E3372",
+              "state": "down", "plugged": "no", "connected": "no"}],
+            [],
+        )
+        self.assertTrue(model.inventory_complete)
+        self.assertEqual(model.interfaces[0].role, "modem")
+        self.assertIs(model.interfaces[0].enabled, False)
+        self.assertIs(model.interfaces[0].connected, False)
+
     def test_vpn_administrative_state_is_separate_from_connection(self):
         model = ENTITY_MODEL.build_interface_entity_model(
             [

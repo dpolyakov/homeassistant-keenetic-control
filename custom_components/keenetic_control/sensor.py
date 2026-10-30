@@ -43,7 +43,7 @@ from .model import (
     parse_number,
     parse_stat_counters,
     parse_system_metrics,
-    parse_sms_messages,
+    parse_sms_list_response,
     select_modem_signal_reading,
     wifi_client_count,
 )
@@ -930,12 +930,8 @@ def _modem_specs(entry: ConfigEntry, data: Mapping[str, Any]) -> list[_SensorSpe
             current_modem = _mapping(current_modems.get(ident))
             if current_modem is None or current_modem.get("sms_available") is not True:
                 return None
-            messages = normalize_records(current_modem.get("sms"), "messages")
-            if messages is None:
-                return None
-            try:
-                normalized = parse_sms_messages(messages)
-            except TypeError:
+            normalized = parse_sms_list_response(current_modem.get("sms"))
+            if normalized is None:
                 return None
             if any(message["read"] is None for message in normalized):
                 return None
@@ -946,12 +942,8 @@ def _modem_specs(entry: ConfigEntry, data: Mapping[str, Any]) -> list[_SensorSpe
             current_modem = _mapping(current_modems.get(ident))
             if current_modem is None or current_modem.get("sms_available") is not True:
                 return {}
-            try:
-                records = normalize_records(current_modem.get("sms"), "messages")
-                if records is None:
-                    return {}
-                messages = parse_sms_messages(records)
-            except TypeError:
+            messages = parse_sms_list_response(current_modem.get("sms"))
+            if messages is None:
                 return {}
             complete = [message for message in messages if message["complete"] is True]
             if not complete:

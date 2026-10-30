@@ -24,27 +24,24 @@ request_api:
 
 list_sms:
   target:
-    device: {}
-  fields:
-    entry_id:
-      selector:
-        config_entry:
-          integration: keenetic_control
-    interface:
-      selector:
-        text: {}
+    device:
+      integration: keenetic_control
 
 mark_sms_read:
   target:
-    device: {}
+    device:
+      integration: keenetic_control
   fields:
-    entry_id:
-      selector:
-        config_entry:
-          integration: keenetic_control
-    interface:
+    sms_id:
+      required: true
       selector:
         text: {}
+
+delete_sms:
+  target:
+    device:
+      integration: keenetic_control
+  fields:
     sms_id:
       required: true
       selector:
@@ -52,7 +49,8 @@ mark_sms_read:
 
 send_ussd:
   target:
-    device: {}
+    device:
+      integration: keenetic_control
   fields:
     request:
       required: true
@@ -61,7 +59,8 @@ send_ussd:
 
 send_sms:
   target:
-    device: {}
+    device:
+      integration: keenetic_control
   fields:
     message:
       required: true

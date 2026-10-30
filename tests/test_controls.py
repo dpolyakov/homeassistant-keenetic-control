@@ -205,6 +205,35 @@ class ModemRestartButtonTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(entity.device_info["via_device_id"], "router-device")
 
 
+class ModemSwitchTests(unittest.IsolatedAsyncioTestCase):
+    def _entity(self, reflect_writes=True):
+        coordinator = _Coordinator({
+            "interface_records": [{"id": "CdcEthernet0", "type": "CdcEthernet",
+                                   "description": "Huawei E3372", "state": "down",
+                                   "plugged": "no", "connected": "no"}],
+            "routes": [],
+        }, reflect_writes=reflect_writes)
+        entity = SWITCH.KeeneticModemSwitch(coordinator, _Entry(), "CdcEthernet0", "Huawei E3372")
+        entity.hass = types.SimpleNamespace()
+        return entity
+
+    async def test_switch_allows_router_to_use_disabled_modem(self):
+        entity = self._entity()
+        self.assertFalse(entity.is_on)
+        self.assertEqual(entity.device_info["identifiers"],
+                         {(BUTTON.DOMAIN, "modem:router|CdcEthernet0")})
+        await entity.async_turn_on()
+        self.assertTrue(entity.is_on)
+        self.assertEqual(entity.coordinator.calls,
+                         [("interface/up", {"name": "CdcEthernet0"})])
+        self.assertEqual(entity.coordinator.refreshes, 1)
+
+    async def test_switch_requires_readback_confirmation(self):
+        entity = self._entity(reflect_writes=False)
+        with self.assertRaises(SWITCH.HomeAssistantError):
+            await entity.async_turn_on()
+
+
 class ClientButtonTests(unittest.IsolatedAsyncioTestCase):
     async def test_wake_on_lan_uses_selected_mac(self):
         coordinator = _Coordinator({})

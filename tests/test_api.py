@@ -128,14 +128,21 @@ class KeeneticApiTests(unittest.IsolatedAsyncioTestCase):
             ],
         )
 
-        result = await api.async_post("sms/send", {"name": "UsbQmi0", "to": "+79990000000", "message": "hello"})
+        result = await api.async_post("sms/send", {"interface": "UsbQmi0", "to": "+79990000000", "message": "hello"})
 
         self.assertEqual(result, {"status": "ok"})
         self.assertEqual(len(session.auth_calls), 2)
         self.assertEqual(session.auth_calls[0][0], "GET")
         self.assertEqual(session.auth_calls[1][0], "POST")
         self.assertEqual(session.auth_calls[1][2]["json"]["login"], "admin")
-        self.assertEqual(session.calls[0][2]["json"], {"name": "UsbQmi0", "to": "+79990000000", "message": "hello"})
+        self.assertEqual(session.calls[0][2]["json"], {"interface": "UsbQmi0", "to": "+79990000000", "message": "hello"})
+
+    async def test_sms_list_get_scopes_the_interface(self):
+        api, session = self._client([_Response(200, {"messages": {}})])
+        result = await api.async_get("sms/list", params={"interface": "UsbQmi0"})
+        self.assertEqual(result, {"messages": {}})
+        self.assertEqual(session.calls[0][0], "GET")
+        self.assertEqual(session.calls[0][2]["params"], {"interface": "UsbQmi0"})
 
     async def test_rejected_credentials_and_http_error_do_not_expose_response_body(self):
         api, _session = self._client(

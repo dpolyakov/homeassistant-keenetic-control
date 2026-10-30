@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from collections.abc import Mapping
 from typing import Any
 
@@ -12,7 +13,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers import device_registry as dr
@@ -44,6 +45,7 @@ _SERVICE_USSD = "send_ussd"
 _SERVICE_SEND_SMS = "send_sms"
 _SERVICE_LIST_SMS = "list_sms"
 _SERVICE_MARK_SMS_READ = "mark_sms_read"
+_SERVICE_DELETE_SMS = "delete_sms"
 
 PLATFORM_LIST = [Platform(platform) for platform in PLATFORMS]
 
@@ -110,12 +112,18 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
         async def poll(remaining: float) -> Any:
             return await runtime.api.async_get(endpoint, timeout=remaining)
 
-        try:
-            result = await async_complete_ussd(
-                send,
-                poll,
-                timeout=USSD_TIMEOUT,
+        if runtime.ussd_lock.locked():
+            raise ServiceValidationError(
+                "A USSD request is already running on this router",
+                translation_domain=DOMAIN, translation_key="ussd_busy",
             )
+        try:
+            async with runtime.ussd_lock:
+                result = await async_complete_ussd(
+                    send,
+                    poll,
+                    timeout=USSD_TIMEOUT,
+                )
         except asyncio.TimeoutError as err:
             raise HomeAssistantError("The USSD request did not complete before the 60-second timeout") from err
         except KeeneticError as err:
@@ -131,29 +139,64 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     async def async_send_sms(call: ServiceCall) -> None:
         device_id = _single_device_id(call.data["device_id"])
         runtime, interface = _runtime_for_modem_device(hass, device_id)
-        await runtime._send_sms(interface, call.data["message"], call.data.get("recipient"))
+        _sms_interface(runtime, interface)
+        recipient = call.data.get("recipient")
+        if recipient is None or not recipient.strip():
+            recipient = runtime.entry.options.get(CONF_SMS_TARGET)
+        if not isinstance(recipient, str) or not recipient.strip():
+            raise ServiceValidationError(
+                "Set a recipient or configure the default SMS phone number",
+                translation_domain=DOMAIN, translation_key="sms_recipient_missing",
+            )
+        recipient = recipient.strip()
+        if not re.fullmatch(r"\+?[0-9]+", recipient):
+            raise ServiceValidationError(
+                "Enter one phone number using digits and an optional leading +",
+                translation_domain=DOMAIN, translation_key="sms_recipient_invalid",
+            )
+        await runtime._send_sms(interface, call.data["message"], recipient)
 
     async def async_list_sms(call: ServiceCall) -> dict[str, Any]:
-        runtime = _runtime_for_call(hass, call)
-        interface = _sms_interface(runtime, call.data.get("interface"))
+        runtime, interface = _runtime_for_sms_call(hass, call)
+        return {"messages": await _async_sms_messages(runtime, interface)}
+
+    async def async_update_sms(call: ServiceCall, command: str) -> None:
+        runtime, interface = _runtime_for_sms_call(hass, call)
+        sms_id = call.data["sms_id"].strip()
+        if not sms_id or any(ord(char) < 32 for char in sms_id):
+            raise ServiceValidationError(
+                "Enter one SMS ID returned by list_sms",
+                translation_domain=DOMAIN, translation_key="sms_id_required",
+            )
+        messages = await _async_sms_messages(runtime, interface)
+        if not any(message["id"] == sms_id for message in messages):
+            raise ServiceValidationError(
+                "The SMS ID does not exist on the selected modem",
+                translation_domain=DOMAIN, translation_key="sms_not_found",
+            )
         try:
-            response = await runtime.api.async_post("sms/list", {"name": interface})
-        except KeeneticError as err:
-            raise HomeAssistantError(str(err)) from err
-        messages = parse_sms_list_response(response)
-        if messages is None:
-            raise HomeAssistantError("The router returned an unsupported SMS list")
-        return {"messages": messages}
+            await runtime.api.async_post(f"sms/{command}", {"interface": interface, "id": sms_id})
+            messages = await _async_sms_messages(runtime, interface)
+        except (KeeneticError, HomeAssistantError) as err:
+            raise HomeAssistantError(
+                "The SMS change result is not confirmed; do not automatically retry",
+                translation_domain=DOMAIN, translation_key="sms_change_unconfirmed",
+            ) from err
+        message = next((message for message in messages if message["id"] == sms_id), None)
+        if (command == "delete" and message is not None) or (
+            command == "read" and (message is None or message["read"] is not True)
+        ):
+            raise HomeAssistantError(
+                "The router did not confirm the SMS change",
+                translation_domain=DOMAIN, translation_key="sms_change_unconfirmed",
+            )
+        await runtime.coordinator.async_request_refresh()
 
     async def async_mark_sms_read(call: ServiceCall) -> None:
-        runtime = _runtime_for_call(hass, call)
-        interface = _sms_interface(runtime, call.data.get("interface"))
-        try:
-            await runtime.api.async_post("sms/read", {"name": interface, "id": call.data["sms_id"]})
-            await runtime.coordinator.async_request_refresh()
-        except KeeneticError as err:
-            raise HomeAssistantError(str(err)) from err
-        return None
+        await async_update_sms(call, "read")
+
+    async def async_delete_sms(call: ServiceCall) -> None:
+        await async_update_sms(call, "delete")
 
     hass.services.async_register(
         DOMAIN,
@@ -171,9 +214,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
         supports_response=SupportsResponse.OPTIONAL,
     )
     sms_target_schema = {
-        vol.Exclusive("entry_id", "router"): cv.string,
-        vol.Exclusive("device_id", "router"): _device_ids,
-        vol.Optional("interface"): cv.string,
+        vol.Required("device_id"): _device_ids,
     }
     hass.services.async_register(
         DOMAIN,
@@ -182,18 +223,16 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
         schema=vol.Schema(sms_target_schema),
         supports_response=SupportsResponse.ONLY,
     )
-    hass.services.async_register(
-        DOMAIN,
-        _SERVICE_MARK_SMS_READ,
-        async_mark_sms_read,
-        schema=vol.Schema(
-            {
-                **sms_target_schema,
-                vol.Required("sms_id"): cv.string,
-            }
-        ),
-        supports_response=SupportsResponse.NONE,
-    )
+    for name, handler in (
+        (_SERVICE_MARK_SMS_READ, async_mark_sms_read),
+        (_SERVICE_DELETE_SMS, async_delete_sms),
+    ):
+        hass.services.async_register(
+            DOMAIN,
+            name,
+            handler,
+            schema=vol.Schema({**sms_target_schema, vol.Required("sms_id"): cv.string}),
+        )
     hass.services.async_register(
         DOMAIN,
         _SERVICE_USSD,
@@ -214,7 +253,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             {
                 vol.Required("device_id"): _device_ids,
                 vol.Required("message"): cv.string,
-                vol.Optional("recipient"): vol.Any(cv.string, [cv.string]),
+                vol.Optional("recipient"): cv.string,
             }
         ),
     )
@@ -278,9 +317,20 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unloaded
 
 
-def _runtime_for_call(hass: HomeAssistant, call: ServiceCall) -> Runtime:
-    entry, runtime = _entry_and_runtime_for_call(hass, call)
-    return runtime
+def _runtime_for_sms_call(hass: HomeAssistant, call: ServiceCall) -> tuple[Runtime, str]:
+    runtime, interface = _runtime_for_modem_device(hass, _single_device_id(call.data["device_id"]))
+    return runtime, _sms_interface(runtime, interface)
+
+
+async def _async_sms_messages(runtime: Runtime, interface: str) -> list[dict[str, Any]]:
+    try:
+        response = await runtime.api.async_get("sms/list", params={"interface": interface})
+    except KeeneticError as err:
+        raise HomeAssistantError(str(err)) from err
+    messages = parse_sms_list_response(response)
+    if messages is None:
+        raise HomeAssistantError("The router returned an unsupported SMS list")
+    return messages
 
 
 def _entry_and_runtime_for_call(hass: HomeAssistant, call: ServiceCall) -> tuple[ConfigEntry, Runtime]:
@@ -381,6 +431,8 @@ class Runtime:
         self.api = api
         self.coordinator = coordinator
         self._notify_services: dict[str, str | None] = {}
+        # Delayed USSD replies belong to the router's shared HTTP session.
+        self.ussd_lock = asyncio.Lock()
 
     @property
     def sms_modems(self) -> set[str]:
@@ -402,6 +454,10 @@ class Runtime:
             wanted[f"keenetic_sms_{router_slug}"] = None
         for interface in active:
             wanted[f"keenetic_sms_{router_slug}_{_service_slug(interface)}"] = interface
+
+        for service_name in self._notify_services.keys() - wanted.keys():
+            self.hass.services.async_remove("notify", service_name)
+            del self._notify_services[service_name]
 
         for service_name, interface in wanted.items():
             if service_name in self._notify_services:
@@ -429,6 +485,8 @@ class Runtime:
         self._notify_services.clear()
 
     async def _send_sms(self, interface: str, message: Any, target: Any) -> None:
+        if interface not in self.sms_modems or "sms" not in self.coordinator.data["modems"][interface]:
+            raise HomeAssistantError("The selected SMS modem is currently unavailable")
         if not isinstance(message, str) or not message.strip():
             raise HomeAssistantError("SMS message cannot be empty")
         if target is None:
@@ -446,7 +504,7 @@ class Runtime:
         for recipient in normalized:
             try:
                 await self.api.async_post(
-                    "sms/send", {"name": interface, "to": recipient, "message": message}
+                    "sms/send", {"interface": interface, "to": recipient, "message": message}
                 )
             except KeeneticError as err:
                 raise HomeAssistantError(

@@ -72,6 +72,7 @@ _MODEM_ENTITY_SUFFIXES = (
     "days_until_reset",
     "quota_usage",
     "unread_sms",
+    "enabled",
     "connected",
     "plugged",
     "roaming",

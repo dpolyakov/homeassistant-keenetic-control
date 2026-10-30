@@ -31,8 +31,10 @@ from .model import (
     parse_hotspot_client,
     normalize_interface_records,
     normalize_records,
+    parse_sms_list_response,
     parse_wireguard_interface_peers,
     parse_wireguard_server_response,
+    sms_records,
     sms_fingerprint,
 )
 from .registry_cleanup import cleanup_dynamic_registry
@@ -62,6 +64,7 @@ class KeeneticCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._wan_initialized = False
         self._sms_initialized: set[str] = set()
         self._sms_fingerprints: dict[str, set[str]] = {}
+        self._sms_capable: set[str] = set()
         self._client_seen: dict[str, dict[str, str]] = {}
         self._client_seen_store = None
 
@@ -193,6 +196,13 @@ class KeeneticCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             for interface in interface_model.interfaces
             if interface.role == "modem"
         }
+        if records is not None:
+            self._sms_capable.intersection_update(modem_ids)
+            self._sms_initialized.intersection_update(modem_ids)
+            self._sms_fingerprints = {
+                name: fingerprints for name, fingerprints in self._sms_fingerprints.items()
+                if name in modem_ids
+            }
         data["modems"] = await self._poll_modems(records or [], modem_ids)
         peer_inventories = data["wireguard_peer_inventories"]
         if peer_inventories:
@@ -370,15 +380,18 @@ class KeeneticCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             except KeeneticError as err:
                 modem["traffic_counter_error"] = type(err).__name__
             try:
-                sms = await self._modem_optional("sms/list", "POST", {"name": interface_id})
+                sms = await self._modem_optional("sms/list", "GET", {"interface": interface_id})
             except InvalidAuth as err:
                 raise ConfigEntryAuthFailed("The router rejected the configured credentials") from err
             except KeeneticError as err:
-                modem["sms_available"] = False
+                modem["sms_available"] = interface_id in self._sms_capable
                 modem["sms_error"] = type(err).__name__
             else:
-                modem["sms_available"] = sms is not None
-                if sms is not None:
+                messages = parse_sms_list_response(sms)
+                if messages is not None:
+                    self._sms_capable.add(interface_id)
+                modem["sms_available"] = interface_id in self._sms_capable
+                if messages is not None:
                     modem["sms"] = sms
                     self._process_sms(interface_id, sms)
             results[interface_id] = modem
@@ -386,7 +399,8 @@ class KeeneticCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _modem_optional(self, endpoint: str, method: str, params: Mapping[str, Any]) -> Any:
         now = self.hass.loop.time()
-        cooldown_key = f"{endpoint}:{params.get('name')}" if params.get("name") else endpoint
+        interface = params.get("name") or params.get("interface")
+        cooldown_key = f"{endpoint}:{interface}" if interface else endpoint
         if now < self._modem_optional_until.get(cooldown_key, 0):
             return None
         try:
@@ -433,7 +447,7 @@ class KeeneticCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def _process_sms(self, interface: str, response: Any) -> None:
         """Suppress boot-time SMS and publish each new complete message once."""
-        messages = normalize_records(response, "messages")
+        messages = sms_records(response)
         if messages is None:
             return
         current = {

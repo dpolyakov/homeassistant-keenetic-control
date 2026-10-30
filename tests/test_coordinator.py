@@ -191,6 +191,78 @@ _CONFIG_FLOW = importlib.import_module(f"{_PACKAGE_NAME}.config_flow")
 
 
 class CoordinatorInterfaceIdentityTests(unittest.IsolatedAsyncioTestCase):
+    async def test_new_id_keyed_sms_emits_once_after_initial_snapshot(self):
+        events = []
+        coordinator = object.__new__(KeeneticCoordinator)
+        coordinator.hass = SimpleNamespace(bus=SimpleNamespace(
+            async_fire=lambda event, payload: events.append((event, payload))))
+        coordinator.entry = SimpleNamespace(entry_id="entry-1")
+        coordinator._sms_initialized = set()
+        coordinator._sms_fingerprints = {}
+        first = {"messages": {"sim-1": {"read": False, "parts": 1,
+                                          "total-parts": 1, "text": "old"}}}
+        new = {"messages": {**first["messages"], "sim-2": {"read": False,
+                 "parts": 1, "total-parts": 1, "text": "new"}}}
+        coordinator._process_sms("UsbLte0", first)
+        coordinator._process_sms("UsbLte0", new)
+        coordinator._process_sms("UsbLte0", new)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0][1]["sms_id"], "sim-2")
+
+    async def test_sms_capability_survives_transient_poll_error(self):
+        coordinator = object.__new__(KeeneticCoordinator)
+        coordinator._sms_capable = set()
+        coordinator._sms_initialized = set()
+        coordinator._sms_fingerprints = {}
+        coordinator.hass = SimpleNamespace(bus=SimpleNamespace(async_fire=lambda *_args: None))
+        responses = iter([{"messages": {}}, _COORDINATOR.RciCommandError("unsupported")])
+
+        async def modem_optional(endpoint, _method, _params):
+            if endpoint == "sms/list":
+                response = next(responses)
+                if isinstance(response, Exception):
+                    raise response
+                return response
+            return None
+
+        coordinator._modem_optional = modem_optional
+        interface = {"id": "UsbLte0", "type": "UsbLte", "state": "up"}
+        first = await coordinator._poll_modems([interface], {"UsbLte0"})
+        second = await coordinator._poll_modems([interface], {"UsbLte0"})
+        self.assertTrue(first["UsbLte0"]["sms_available"])
+        self.assertTrue(second["UsbLte0"]["sms_available"])
+        self.assertNotIn("sms", second["UsbLte0"])
+
+    async def test_unsupported_cdc_modem_has_no_sms_capability(self):
+        coordinator = object.__new__(KeeneticCoordinator)
+        coordinator._sms_capable = set()
+
+        async def modem_optional(endpoint, _method, _params):
+            if endpoint == "sms/list":
+                raise _COORDINATOR.RciCommandError("SMS is not supported")
+            return None
+
+        coordinator._modem_optional = modem_optional
+        modem = {"id": "CdcEthernet0", "type": "CdcEthernet", "state": "down"}
+        result = await coordinator._poll_modems([modem], {"CdcEthernet0"})
+        self.assertIs(result["CdcEthernet0"]["sms_available"], False)
+        self.assertNotIn("sms", result["CdcEthernet0"])
+
+    async def test_unread_sms_sensor_counts_only_confirmed_records(self):
+        entry = SimpleNamespace(unique_id="router")
+        good = {"modems": {"UsbLte0": {"interface_info": {}, "sms_available": True,
+                "sms": {"messages": {"sim-1": {"read": False},
+                                      "sim-2": {"read": True}}}}}}
+        spec = next(spec for spec in _SENSOR._modem_specs(entry, good)
+                    if spec.translation_key == "unread_sms")
+        self.assertEqual(spec.value(good), 1)
+        good["modems"]["UsbLte0"].pop("sms")
+        self.assertIsNone(spec.value(good))
+        unsupported = {"modems": {"CdcEthernet0": {"interface_info": {},
+                                            "sms_available": False}}}
+        self.assertNotIn("unread_sms", {spec.translation_key for spec in
+                         _SENSOR._modem_specs(entry, unsupported)})
+
     async def test_initial_refresh_does_not_wait_for_optional_ipsec_log(self):
         coordinator = object.__new__(KeeneticCoordinator)
         coordinator.hass = SimpleNamespace(loop=asyncio.get_running_loop())
@@ -210,6 +282,7 @@ class CoordinatorInterfaceIdentityTests(unittest.IsolatedAsyncioTestCase):
         coordinator._previous_default_interface = None
         coordinator._sms_initialized = set()
         coordinator._sms_fingerprints = {}
+        coordinator._sms_capable = set()
 
         async def api_get(endpoint):
             if endpoint == "show/version":
@@ -239,6 +312,7 @@ class CoordinatorInterfaceIdentityTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_stats_and_modem_requests_use_router_interface_id(self):
         coordinator = object.__new__(KeeneticCoordinator)
+        coordinator._sms_capable = set()
         calls = []
 
         async def optional(endpoint, key, params=None):
@@ -266,7 +340,8 @@ class CoordinatorInterfaceIdentityTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("UsbLte0", modems)
         self.assertEqual(modems["UsbLte0"]["interface_info"]["interface-name"], "Friendly LTE label")
         self.assertEqual(calls[0][2], {"name": "UsbLte0"})
-        self.assertTrue(all(call[2]["name"] == "UsbLte0" for call in calls[1:]))
+        self.assertTrue(all(call[2].get("name", call[2].get("interface")) == "UsbLte0" for call in calls[1:]))
+        self.assertIn(("sms/list", "GET", {"interface": "UsbLte0"}), calls)
 
     async def test_stats_skip_interfaces_outside_entity_policy(self):
         coordinator = object.__new__(KeeneticCoordinator)

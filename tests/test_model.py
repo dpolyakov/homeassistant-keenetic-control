@@ -439,7 +439,10 @@ class DocumentedResponseTests(unittest.TestCase):
 
     def test_sms_list_requires_the_documented_messages_collection(self):
         self.assertEqual(parse_sms_list_response({"messages": []}), [])
+        self.assertEqual(parse_sms_list_response({"messages-count": 0}), [])
         self.assertIsNone(parse_sms_list_response({"status": "ok"}))
+        self.assertIsNone(parse_sms_list_response({"messages-count": False}))
+        self.assertIsNone(parse_sms_list_response({"messages-count": 1, "messages": {}}))
 
     def test_only_confirmed_sms_capability_is_accepted(self):
         self.assertTrue(has_sms_service({"sms_available": True}))
@@ -841,6 +844,15 @@ class RouteSelectionTests(unittest.TestCase):
 
 
 class SmsTests(unittest.TestCase):
+    def test_id_keyed_router_messages_preserve_ids_and_read_state(self):
+        messages = parse_sms_list_response({"messages": {
+            "sim-1": {"read": False, "parts": 1, "total-parts": 1, "text": "one"},
+            "sim-2": {"read": True, "parts": 1, "total-parts": 1, "text": "two"},
+        }})
+        self.assertEqual([(row["id"], row["read"]) for row in messages],
+                         [("sim-1", False), ("sim-2", True)])
+        self.assertIsNone(parse_sms_list_response({"messages": {"sim-1": "bad"}}))
+
     def test_complete_and_partial_messages(self):
         complete = parse_sms_message(
             {"id": "sim-0", "read": "yes", "parts": "2", "total-parts": "2", "text": "complete"}

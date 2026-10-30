@@ -72,36 +72,45 @@
     },
     "list_sms": {
       "name": "List SMS",
-      "description": "Select one router as the action target or provide entry_id. Read SMS messages without changing their read state.",
-      "fields": {
-        "entry_id": {"name": "Config entry ID"},
-        "interface": {"name": "Modem interface"}
-      }
+      "description": "Select exactly one Keenetic modem as the action target. Returns messages without changing their read state."
     },
     "mark_sms_read": {
       "name": "Mark SMS as read",
-      "description": "Select one router as the action target or provide entry_id. Mark one SMS as read on a selected modem.",
+      "description": "Select exactly one Keenetic modem as the action target. Marks one SMS as read using an ID from the message list.",
       "fields": {
-        "entry_id": {"name": "Config entry ID"},
-        "interface": {"name": "Modem interface"},
+        "sms_id": {"name": "SMS ID"}
+      }
+    },
+    "delete_sms": {
+      "name": "Delete SMS",
+      "description": "Select exactly one Keenetic modem as the action target. Deletes one SMS using an ID from the message list.",
+      "fields": {
         "sms_id": {"name": "SMS ID"}
       }
     },
     "send_ussd": {
       "name": "Send USSD request",
-      "description": "Select exactly one Keenetic modem as the action target. The operation has a 60-second deadline.",
+      "description": "Select exactly one Keenetic modem as the action target. Waits up to 60 seconds for a reply. Only one USSD request can run per router at a time.",
       "fields": {
         "request": {"name": "USSD request"}
       }
     },
     "send_sms": {
       "name": "Send SMS",
-      "description": "Select exactly one SMS-capable Keenetic modem as the action target. An explicit recipient replaces the configured default.",
+      "description": "Select exactly one SMS-capable Keenetic modem as the action target. Sends to one recipient; an empty field uses the phone number from the integration options.",
       "fields": {
         "message": {"name": "Message"},
-        "recipient": {"name": "Recipient or recipients"}
+        "recipient": {"name": "Recipient", "description": "One number: digits and an optional leading +. Add separate send SMS actions for multiple recipients."}
       }
     }
+  },
+  "exceptions": {
+    "ussd_busy": {"message": "A USSD request is already running on this router. Wait for it to finish."},
+    "sms_recipient_missing": {"message": "Set an SMS recipient or configure the default phone number in the integration options."},
+    "sms_recipient_invalid": {"message": "Enter one phone number using digits and an optional leading +."},
+    "sms_id_required": {"message": "Enter one message ID returned by list_sms."},
+    "sms_not_found": {"message": "The SMS ID does not exist on the selected modem."},
+    "sms_change_unconfirmed": {"message": "The SMS change is not confirmed. Check the message list before calling the action again."}
   },
   "entity": {
     "binary_sensor": {
@@ -128,7 +137,8 @@
       "client_wake_on_lan": {"name": "Wake on LAN"}
     },
     "switch": {
-      "vpn_enabled": {"name": "Enabled"}
+      "vpn_enabled": {"name": "Enabled"},
+      "modem_enabled": {"name": "Mobile network connection"}
     },
     "select": {
       "client_policy": {"name": "IP policy"}

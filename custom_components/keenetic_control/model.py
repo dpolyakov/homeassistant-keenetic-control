@@ -1220,13 +1220,44 @@ def parse_sms_messages(messages: Iterable[Mapping[str, Any]]) -> list[dict[str, 
 
 
 def parse_sms_list_response(value: Any) -> list[dict[str, Any]] | None:
-    """Accept only the documented repeated ``messages`` collection."""
-    if not isinstance(value, Mapping) or "messages" not in value:
-        return None
-    records = normalize_records(value, "messages")
+    """Parse the SMS ID-keyed collection, retaining unknown shapes as unknown."""
+    records = sms_records(value)
     return parse_sms_messages(records) if records is not None else None
 
 
+def sms_records(value: Any) -> list[Mapping[str, Any]] | None:
+    """Return SMS records with IDs supplied by the RCI map keys."""
+    if not isinstance(value, Mapping):
+        return None
+    count = value.get("messages-count")
+    if count is not None and (
+        isinstance(count, bool) or not isinstance(count, int) or count < 0
+    ):
+        return None
+    if "messages" not in value:
+        return [] if count == 0 else None
+    messages = value["messages"]
+    if isinstance(messages, Mapping):
+        if "id" in messages:
+            return [messages]
+        records = []
+        for message_id, message in messages.items():
+            if (
+                not isinstance(message_id, str)
+                or not message_id.strip()
+                or not isinstance(message, Mapping)
+            ):
+                return None
+            if "id" in message and message["id"] != message_id:
+                return None
+            records.append({**message, "id": message_id})
+    elif isinstance(messages, (list, tuple)):
+        records = normalize_records(messages)
+    else:
+        return None
+    return records if records is not None and (count is None or count == len(records)) else None
+
+
 def has_sms_service(value: Any) -> bool:
-    """Return true only when a completed modem poll confirms SMS support."""
+    """Return true only after SMS support has been confirmed for the modem."""
     return isinstance(value, Mapping) and value.get("sms_available") is True

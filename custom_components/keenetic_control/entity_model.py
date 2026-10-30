@@ -113,8 +113,8 @@ def _role(record: Any, identifier: str) -> InterfaceRole:
         return "access_point"
     if interface_type == "port":
         return "port"
-    if interface_type in {"usb", "usbmodem", "usbqmi", "usblte", "usbyota", "yotaone"} or normalized_id.startswith(
-        ("usbqmi", "usbmodem", "usblte", "usbyota", "yotaone")
+    if interface_type in {"usb", "usbmodem", "usbqmi", "usblte", "usbyota", "yotaone", "cdcethernet"} or normalized_id.startswith(
+        ("usbqmi", "usbmodem", "usblte", "usbyota", "yotaone", "cdcethernet")
     ):
         return "modem"
     if interface_type in {"wifimaster", "bridge", "loopback"}:
