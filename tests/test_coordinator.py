@@ -773,6 +773,21 @@ class DiagnosticEntitySpecTests(unittest.TestCase):
             },
         )
 
+    def test_usb_storage_state_requires_a_known_storage_device(self):
+        media = {
+            "Media0": {
+                "state": "ACTIVE",
+                "partition": [{"state": "MOUNTED", "total": "1000", "free": "400"}],
+            }
+        }
+
+        self.assertFalse(
+            _BINARY_SENSOR._usb_storage_detected(
+                {"usb": {"device": []}, "media": media}
+            )
+        )
+        self.assertIsNone(_BINARY_SENSOR._usb_storage_detected({"media": media}))
+
 
 class EntityPolicySpecTests(unittest.TestCase):
     def test_raw_internal_interfaces_do_not_create_entities(self):

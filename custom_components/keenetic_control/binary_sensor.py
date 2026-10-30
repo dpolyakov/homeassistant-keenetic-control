@@ -138,6 +138,11 @@ def _usb_storage_records(data: Mapping[str, Any]) -> list[Mapping[str, Any]] | N
 
 def _usb_storage_detected(data: Mapping[str, Any]) -> bool | None:
     """Report whether at least one USB volume is mounted."""
+    storage_devices = _usb_storage_records(data)
+    if storage_devices is None:
+        return None
+    if not storage_devices:
+        return False
     status = parse_usb_media_status(data.get("media"))
     return status["available"] if status is not None else None
 
