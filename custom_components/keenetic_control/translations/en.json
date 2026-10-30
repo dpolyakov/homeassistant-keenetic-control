@@ -62,8 +62,9 @@
   "services": {
     "request_api": {
       "name": "Request RCI API",
-      "description": "Select one router as the action target or provide entry_id. GET reads data. POST requires the advanced integration option and can change router configuration.",
+      "description": "Select one router device or provide entry_id. GET reads data. POST requires the advanced integration option and can change router configuration.",
       "fields": {
+        "device_id": {"name": "Router device"},
         "entry_id": {"name": "Config entry ID"},
         "method": {"name": "Method"},
         "endpoint": {"name": "RCI endpoint"},
@@ -72,33 +73,40 @@
     },
     "list_sms": {
       "name": "List SMS",
-      "description": "Select exactly one Keenetic modem as the action target. Returns messages without changing their read state."
+      "description": "Select exactly one Keenetic modem. Returns messages without changing their read state.",
+      "fields": {
+        "device_id": {"name": "Modem"}
+      }
     },
     "mark_sms_read": {
       "name": "Mark SMS as read",
-      "description": "Select exactly one Keenetic modem as the action target. Marks one SMS as read using an ID from the message list.",
+      "description": "Select exactly one Keenetic modem. Marks one SMS as read using an ID from the message list.",
       "fields": {
+        "device_id": {"name": "Modem"},
         "sms_id": {"name": "SMS ID"}
       }
     },
     "delete_sms": {
       "name": "Delete SMS",
-      "description": "Select exactly one Keenetic modem as the action target. Deletes one SMS using an ID from the message list.",
+      "description": "Select exactly one Keenetic modem. Deletes one SMS using an ID from the message list.",
       "fields": {
+        "device_id": {"name": "Modem"},
         "sms_id": {"name": "SMS ID"}
       }
     },
     "send_ussd": {
       "name": "Send USSD request",
-      "description": "Select exactly one Keenetic modem as the action target. Waits up to 60 seconds for a reply. Only one USSD request can run per router at a time.",
+      "description": "Select exactly one Keenetic modem. Waits up to 60 seconds for a reply. Only one USSD request can run per router at a time.",
       "fields": {
+        "device_id": {"name": "Modem"},
         "request": {"name": "USSD request"}
       }
     },
     "send_sms": {
       "name": "Send SMS",
-      "description": "Select exactly one SMS-capable Keenetic modem as the action target. Sends to one recipient; an empty field uses the phone number from the integration options.",
+      "description": "Select exactly one SMS-capable Keenetic modem. Sends to one recipient; an empty field uses the phone number from the integration options.",
       "fields": {
+        "device_id": {"name": "Modem"},
         "message": {"name": "Message"},
         "recipient": {"name": "Recipient", "description": "One number: digits and an optional leading +. Add separate send SMS actions for multiple recipients."}
       }

@@ -48,6 +48,7 @@ _SERVICE_MARK_SMS_READ = "mark_sms_read"
 _SERVICE_DELETE_SMS = "delete_sms"
 
 PLATFORM_LIST = [Platform(platform) for platform in PLATFORMS]
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 def _device_ids(value: Any) -> Any:
