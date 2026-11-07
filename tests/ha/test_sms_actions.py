@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 import voluptuous as vol
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -74,8 +75,9 @@ async def routers(hass):
             async_call=AsyncMock(return_value={"response": "Balance: 100"}),
             async_request_refresh=AsyncMock(),
         )
-        runtime = Runtime(hass=hass, entry=entry, api=api, coordinator=coordinator)
-        hass.data[DOMAIN][entry.entry_id] = runtime
+        runtime = Runtime(entry=entry, api=api, coordinator=coordinator)
+        entry.runtime_data = runtime
+        entry._async_set_state(hass, ConfigEntryState.LOADED, None)
         routers.append(
             SimpleNamespace(
                 entry=entry, router=router, modems=modems, runtime=runtime, api=api
@@ -121,7 +123,7 @@ async def test_rejects_wrong_target_before_router_io(
         "missing": "unknown-device",
         "multiple": [modem.id for modem in selected.modems],
     }
-    with pytest.raises(HomeAssistantError):
+    with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
             DOMAIN,
             action,
@@ -284,3 +286,61 @@ async def test_ussd_releases_lock_after_error(hass, routers, error):
         await call(hass, routers[0], "send_ussd")
     assert not routers[0].runtime.ussd_lock.locked()
     assert await call(hass, routers[0], "send_ussd") == {"response": "Balance: 100"}
+
+
+@pytest.mark.parametrize("action", [*ACTIONS, "request_api"])
+@pytest.mark.parametrize(
+    "state",
+    [
+        ConfigEntryState.NOT_LOADED,
+        ConfigEntryState.SETUP_ERROR,
+        ConfigEntryState.FAILED_UNLOAD,
+    ],
+)
+async def test_actions_reject_unloaded_entry_even_with_stale_runtime(
+    hass, routers, action, state
+):
+    selected = routers[0]
+    selected.entry._async_set_state(hass, state, None)
+    data = (
+        {"entry_id": selected.entry.entry_id, "endpoint": "show/version"}
+        if action == "request_api"
+        else {**ACTIONS[action], "device_id": selected.modems[0].id}
+    )
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(
+            DOMAIN, action, data, blocking=True, return_response=action == "list_sms"
+        )
+    selected.api.async_get.assert_not_awaited()
+    selected.api.async_post.assert_not_awaited()
+    selected.runtime.coordinator.async_call.assert_not_awaited()
+
+
+async def test_request_api_resolves_current_runtime_after_reload(hass, routers):
+    selected = routers[0]
+    new_api = SimpleNamespace(async_get=AsyncMock(return_value={"version": "test"}))
+    selected.entry.runtime_data = SimpleNamespace(api=new_api)
+    result = await hass.services.async_call(
+        DOMAIN,
+        "request_api",
+        {"device_id": selected.router.id, "endpoint": "show/version"},
+        blocking=True,
+        return_response=True,
+    )
+    assert result == {"response": {"version": "test"}}
+    new_api.async_get.assert_awaited_once_with("show/version")
+    selected.api.async_get.assert_not_awaited()
+
+
+async def test_request_api_rejects_foreign_entry_and_missing_target(hass, routers):
+    foreign = MockConfigEntry(domain="other")
+    foreign.add_to_hass(hass)
+    for target in ({"entry_id": foreign.entry_id}, {"entry_id": "missing"}, {}):
+        with pytest.raises(ServiceValidationError):
+            await hass.services.async_call(
+                DOMAIN,
+                "request_api",
+                {**target, "endpoint": "show/version"},
+                blocking=True,
+            )
+    routers[0].api.async_get.assert_not_awaited()

@@ -117,6 +117,8 @@ class ClientTrackerTests(unittest.TestCase):
             }
         )
 
+        self.assertIsNone(entity.name)
+        self.assertEqual(entity._attr_unique_id, "router_aa:bb:cc:dd:ee:ff")
         self.assertTrue(entity.is_connected)
         self.assertEqual(entity.ip_address, "192.0.2.10")
         self.assertEqual(

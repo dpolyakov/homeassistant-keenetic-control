@@ -6,7 +6,7 @@
 
 ## Русский
 
-Keenetic Control — пользовательская интеграция Home Assistant для локального мониторинга и управления роутерами Keenetic и Netcraze через API. Интеграция опрашивает роутер по локальной сети и не отправляет телеметрию во внешние сервисы. Для каждого роутера создайте отдельную запись интеграции.
+Keenetic Control — пользовательская интеграция Home Assistant для локального мониторинга и управления роутерами [Keenetic](https://keenetic.com/) и [Netcraze](https://netcraze.ru/) через API. Интеграция опрашивает роутер по локальной сети и не отправляет телеметрию во внешние сервисы. Для каждого роутера создайте отдельную запись интеграции.
 
 ### Возможности
 
@@ -54,7 +54,6 @@ Keenetic Control — пользовательская интеграция Home 
 
 ### Настройки интеграции
 
-- Интервал опроса — 30 секунд по умолчанию, минимум 1 секунда.
 - Списки выбранных клиентов: один для трекинга, другой для управления IP-политиками. Клиентов можно выбрать из обнаруженных или добавить по MAC-адресу.
 - Список включённых сетей Wi-Fi по SSID. **При сохранении интеграция включает выбранные сети и выключает остальные точки доступа из списка.**
 - Разрешение произвольных POST-запросов RCI — выключено по умолчанию. Такой запрос может изменить настройки роутера или запустить команду.
@@ -110,6 +109,49 @@ USSD-запрос может выполняться до 60 секунд. На �
 
 Текст SMS передаётся в событии Home Assistant и может сохраниться в данных автоматизаций и журналах. Учитывайте это при настройке хранения данных.
 
+#### Параметры действий
+
+Все названия ниже имеют префикс `keenetic_control.`. SMS/USSD-действия принимают ровно одно устройство модема в `target.device_id` (или поле `device_id`); интерфейс определяется автоматически.
+
+| Действие | Данные | Результат |
+| --- | --- | --- |
+| `send_sms` | Обязательный непустой `message`; необязательный `recipient` — один номер из цифр с возможным `+` в начале | Отправляет одно SMS; данных ответа нет |
+| `list_sms` | Только устройство модема | Обязательный ответ `messages`: список SMS; используйте `response_variable` |
+| `mark_sms_read` | Обязательный `sms_id` из `list_sms` выбранного модема | Отмечает одно SMS прочитанным и проверяет результат; данных ответа нет |
+| `delete_sms` | Обязательный `sms_id` из `list_sms` выбранного модема | Удаляет одно SMS и проверяет результат; данных ответа нет |
+| `send_ussd` | Обязательный непустой `request`, например `*100#`, без `/` | Необязательный ответ `response`: текст USSD |
+| `request_api` | Ровно один роутер через `target.device_id`/`device_id` либо `entry_id`; обязательный `endpoint`, например `show/version`; `method`: `GET` по умолчанию или `POST`; необязательный `data_json` — JSON для POST | Необязательный ответ `response`: JSON роутера |
+
+`request_api.endpoint` задаётся относительно `/rci/`. GET не принимает `data_json`; POST требует опции разрешения изменяющих запросов. Для `request_api` выбирайте корневое устройство роутера, для остальных действий — модем.
+
+Каждая запись `messages` содержит `id`, `from`, `timestamp`, `read`, `parts`, `total_parts`, `complete`, `text`. Неизвестные поля равны `null`; `text` доступен только для полного сообщения. Чтение списка не меняет отметку прочтения.
+
+Пример получения списка в автоматизации:
+
+```yaml
+actions:
+  - action: keenetic_control.list_sms
+    target:
+      device_id: "MODEM_DEVICE_ID"
+    response_variable: sms_result
+```
+
+Далее список доступен как `sms_result.messages`. Для USSD или `request_api` задайте собственный `response_variable`; результат находится в его поле `response`. SMS/USSD-ответы могут содержать личные данные и попадать в трассировки автоматизаций.
+
+### Опрос данных
+
+Интеграция опрашивает роутер каждые 30 секунд: это компромисс между задержкой состояния WAN/клиентов и нагрузкой от нескольких RCI-запросов. Это мониторинг, а не обнаружение событий в реальном времени. Ошибки необязательных ресурсов обрабатываются отдельно и не останавливают основной опрос.
+
+Для собственного расписания отключите **Enable polling for changes** в системных параметрах записи интеграции и вызывайте `homeassistant.update_entity` из автоматизации для одной сущности этого роутера, например сенсора CPU. Все сущности роутера используют общий координатор; обновлять каждую отдельно не нужно. [Настройка собственного интервала](https://www.home-assistant.io/common-tasks/general/#defining-a-custom-polling-interval).
+
+### Удаление
+
+1. Откройте **Settings → Devices & services → Keenetic Control**, выберите нужную запись роутера и нажмите **Delete**.
+2. Чтобы удалить код интеграции, сначала удалите все её записи. Затем удалите интеграцию через HACS/Marketplace или, при ручной установке, каталог `<config>/custom_components/keenetic_control`.
+3. Перезапустите Home Assistant после удаления кода.
+
+Изменённые ранее настройки роутера, например состояние Wi-Fi или IP-политики, автоматически не откатываются. Если настраивали отдельный доступ к RCI, закройте его в настройках роутера, когда он больше не нужен.
+
 ### Ограничения
 
 - Доступность функций зависит от модели, KeeneticOS, установленных компонентов и ответа RCI.
@@ -125,7 +167,7 @@ USSD-запрос может выполняться до 60 секунд. На �
 
 ## English
 
-Keenetic Control is a custom Home Assistant integration for monitoring and controlling Keenetic and Netcraze routers over the local RCI interface. It polls the router on the local network and does not send telemetry to external services. Add a separate integration entry for each router.
+Keenetic Control is a custom Home Assistant integration for monitoring and controlling [Keenetic](https://keenetic.com/) and [Netcraze](https://netcraze.ru/) routers over the local RCI interface. It polls the router on the local network and does not send telemetry to external services. Add a separate integration entry for each router.
 
 ### Features
 
@@ -173,7 +215,6 @@ Repeat these steps for each router. Home Assistant identifies a router by its MA
 
 ### Integration options
 
-- Polling interval: 30 seconds by default, with a minimum of 1 second.
 - Separate client lists for presence tracking and IP-policy controls. Select discovered clients or enter MAC addresses manually.
 - Enabled Wi-Fi networks by SSID. **When you save the options, selected networks are enabled and other access points in the list are disabled.**
 - Arbitrary RCI POST requests are disabled by default. A POST request may change router settings or start a command.
@@ -228,6 +269,49 @@ USSD requests can take up to 60 seconds. Only one USSD request runs per router a
 `request_api` performs RCI GET requests. POST requests require the corresponding option to be enabled and may change router state. Check the endpoint and request data before calling the action.
 
 SMS text is included in the Home Assistant event and may be stored in automation data and logs. Account for this when configuring data retention.
+
+#### Action parameters
+
+All action names below use the `keenetic_control.` prefix. SMS/USSD actions take exactly one modem in `target.device_id` (or the `device_id` field); the interface is resolved automatically.
+
+| Action | Data | Result |
+| --- | --- | --- |
+| `send_sms` | Required nonempty `message`; optional `recipient`: one number containing digits and an optional leading `+` | Sends one SMS; no response data |
+| `list_sms` | Modem device only | Required `messages` response containing the SMS list; use `response_variable` |
+| `mark_sms_read` | Required `sms_id` from `list_sms` for the selected modem | Marks one SMS as read and verifies the result; no response data |
+| `delete_sms` | Required `sms_id` from `list_sms` for the selected modem | Deletes one SMS and verifies the result; no response data |
+| `send_ussd` | Required nonempty `request`, such as `*100#`, without `/` | Optional `response` containing USSD text |
+| `request_api` | Exactly one router via `target.device_id`/`device_id` or `entry_id`; required `endpoint`, such as `show/version`; `method`: `GET` by default or `POST`; optional `data_json`: JSON for POST | Optional `response` containing the router's JSON |
+
+`request_api.endpoint` is relative to `/rci/`. GET does not accept `data_json`; POST requires the option allowing state-changing requests. Select the root router device for `request_api` and a modem for the other actions.
+
+Each item in `messages` contains `id`, `from`, `timestamp`, `read`, `parts`, `total_parts`, `complete`, and `text`. Unknown fields are `null`; `text` is available only for complete messages. Listing messages does not mark them as read.
+
+Example of receiving the list in an automation:
+
+```yaml
+actions:
+  - action: keenetic_control.list_sms
+    target:
+      device_id: "MODEM_DEVICE_ID"
+    response_variable: sms_result
+```
+
+The list is then available as `sms_result.messages`. For USSD or `request_api`, set a `response_variable` and read its `response` field. SMS/USSD responses may contain personal information and appear in automation traces.
+
+### Data polling
+
+The integration polls each router every 30 seconds, balancing WAN/client status latency against the load of multiple RCI requests. It provides monitoring rather than real-time event detection. Failures of optional resources do not stop the main poll.
+
+For a custom schedule, turn off **Enable polling for changes** in the config entry's system options and call `homeassistant.update_entity` from an automation for one entity of that router, such as the CPU sensor. The router's entities share a coordinator, so there is no need to update each entity separately. [Define a custom polling interval](https://www.home-assistant.io/common-tasks/general/#defining-a-custom-polling-interval).
+
+### Removal
+
+1. Open **Settings → Devices & services → Keenetic Control**, select the router entry and choose **Delete**.
+2. To remove the integration's code, delete all its entries first. Then remove the integration through HACS/Marketplace or, for a manual installation, delete `<config>/custom_components/keenetic_control`.
+3. Restart Home Assistant after removing the code.
+
+Router settings changed earlier, such as Wi-Fi state or IP policies, are not reverted automatically. Close any dedicated RCI access you configured on the router when it is no longer needed.
 
 ### Limitations
 

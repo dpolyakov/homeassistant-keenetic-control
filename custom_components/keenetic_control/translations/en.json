@@ -9,6 +9,12 @@
           "port": "Port",
           "username": "Username",
           "password": "Password"
+        },
+        "data_description": {
+          "address": "Router HTTP or HTTPS address, without a path. Use the separate port field.",
+          "port": "RCI port on the router, from 1 to 65535.",
+          "username": "Router username. Leave both credentials empty only for configured unauthenticated RCI access.",
+          "password": "Password for the router account; empty for unauthenticated RCI access."
         }
       },
       "reauth": {
@@ -19,6 +25,12 @@
           "port": "Port",
           "username": "Username",
           "password": "Password"
+        },
+        "data_description": {
+          "address": "Router HTTP or HTTPS address, without a path. Use the separate port field.",
+          "port": "RCI port on the router, from 1 to 65535.",
+          "username": "Router username. Leave both credentials empty only for configured unauthenticated RCI access.",
+          "password": "Password for the router account; empty for unauthenticated RCI access."
         }
       }
     },
@@ -39,7 +51,6 @@
       "init": {
         "title": "Keenetic options",
         "data": {
-          "scan_interval": "Polling interval (seconds)",
           "clients": "Selected clients",
           "policy_clients": "Clients with policy selectors",
           "allow_mutating_rci": "Allow arbitrary RCI POST requests",
@@ -50,7 +61,8 @@
           "clients": "Select discovered clients or enter MAC addresses manually.",
           "policy_clients": "Independent list of clients that need an IP-policy control.",
           "allow_mutating_rci": "Advanced option. POST may change router configuration or start commands.",
-          "wifi_enabled_access_points": "Select the networks that should remain enabled. Unselected networks will be turned off when you save."
+          "wifi_enabled_access_points": "Select the networks that should remain enabled. Unselected networks will be turned off when you save.",
+          "sms_target": "One default SMS phone number, with digits and an optional leading +."
         }
       }
     },

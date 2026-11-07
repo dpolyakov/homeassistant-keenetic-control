@@ -7,7 +7,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from ipaddress import ip_interface, ip_address
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -47,6 +47,9 @@ from .model import (
     select_modem_signal_reading,
     wifi_client_count,
 )
+
+if TYPE_CHECKING:
+    from .runtime import KeeneticConfigEntry
 
 
 @dataclass(frozen=True)
@@ -1418,11 +1421,11 @@ class KeeneticSensor(CoordinatorEntity[KeeneticCoordinator], SensorEntity):
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: KeeneticConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up router sensors and add discovered interface/modem/Mesh sensors."""
-    runtime = hass.data[DOMAIN][entry.entry_id]
+    runtime = entry.runtime_data
     coordinator: KeeneticCoordinator = runtime.coordinator
     known: set[str] = set()
 

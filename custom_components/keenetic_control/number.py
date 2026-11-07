@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.number import NumberEntity
 from homeassistant.config_entries import ConfigEntry
@@ -19,6 +19,9 @@ from .const import DOMAIN
 from .coordinator import KeeneticCoordinator
 from .device_helpers import router_device_id
 from .model import normalize_records, parse_hotspot_client, parse_traffic_shape
+
+if TYPE_CHECKING:
+    from .runtime import KeeneticConfigEntry
 
 
 def _hotspot_client_record(data: Mapping[str, Any] | None, mac: str) -> Mapping[str, Any] | None:
@@ -101,10 +104,10 @@ class KeeneticClientBandwidthLimit(CoordinatorEntity[KeeneticCoordinator], Numbe
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: KeeneticConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    runtime = hass.data[DOMAIN][entry.entry_id]
+    runtime = entry.runtime_data
     async_add_entities(
         KeeneticClientBandwidthLimit(runtime.coordinator, entry, mac)
         for mac in sorted(selected_client_macs(entry))

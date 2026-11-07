@@ -37,15 +37,12 @@ from .const import (
     CONF_CLIENTS,
     CONF_PORT,
     CONF_POLICY_CLIENTS,
-    CONF_SCAN_INTERVAL,
     CONF_SMS_TARGET,
     CONF_USERNAME,
     CONF_WIFI_ENABLED_ACCESS_POINTS,
     DEFAULT_ADDRESS,
     DEFAULT_PORT,
-    DEFAULT_SCAN_INTERVAL,
     DOMAIN,
-    MIN_SCAN_INTERVAL,
 )
 from .client_registry import normalize_mac
 from .entity_model import build_interface_entity_model
@@ -103,8 +100,6 @@ def _stable_router_id(version: Mapping[str, Any], interface_response: Any) -> st
     if isinstance(direct, str) and _is_mac(direct):
         return direct.lower().replace("-", ":")
     for item in _walk(interface_response):
-        if not isinstance(item, Mapping):
-            continue
         if item.get("interface-name") == "Home" or item.get("id") == "Bridge0":
             value = item.get("mac")
             if isinstance(value, str) and _is_mac(value):
@@ -192,7 +187,7 @@ async def _async_validate(
 class KeeneticConfigFlow(ConfigFlow, domain=DOMAIN):
     """Add one local Keenetic router per stable hardware identity."""
 
-    VERSION = 2
+    VERSION = 3
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         errors: dict[str, str] = {}
@@ -325,15 +320,6 @@ class KeeneticOptionsFlow(OptionsFlowWithReload):
             )
             for mac, name in client_rows
         ]
-        interval = NumberSelector(
-            NumberSelectorConfig(
-                min=MIN_SCAN_INTERVAL,
-                max=2147483647,
-                step=1,
-                mode=NumberSelectorMode.BOX,
-                unit_of_measurement="s",
-            )
-        )
         clients = SelectSelector(
             SelectSelectorConfig(
                 options=client_options,
@@ -370,7 +356,6 @@ class KeeneticOptionsFlow(OptionsFlowWithReload):
         )
         schema = vol.Schema(
             {
-                vol.Required(CONF_SCAN_INTERVAL, default=old.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)): interval,
                 vol.Required(CONF_CLIENTS, default=old.get(CONF_CLIENTS, [])): clients,
                 vol.Required(CONF_POLICY_CLIENTS, default=old.get(CONF_POLICY_CLIENTS, [])): clients,
                 vol.Required(
@@ -390,7 +375,7 @@ class KeeneticOptionsFlow(OptionsFlowWithReload):
         return self.async_show_form(step_id="init", data_schema=schema, errors=errors)
 
     def _current_data(self) -> Mapping[str, Any]:
-        runtime = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        runtime = getattr(self.config_entry, "runtime_data", None)
         coordinator = getattr(runtime, "coordinator", None)
         data = getattr(coordinator, "data", None)
         return data if isinstance(data, Mapping) else {}
@@ -414,7 +399,7 @@ class KeeneticOptionsFlow(OptionsFlowWithReload):
         available_ids = {row["id"] for row in rows}
         if not desired <= available_ids:
             raise _WifiInventoryUnavailable
-        runtime = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        runtime = getattr(self.config_entry, "runtime_data", None)
         coordinator = getattr(runtime, "coordinator", None)
         if coordinator is None:
             if any(row["enabled"] != (row["id"] in desired) for row in rows):
@@ -430,12 +415,10 @@ class KeeneticOptionsFlow(OptionsFlowWithReload):
 
     def _known_clients(self) -> list[tuple[str, str]]:
         """Return known client MACs; keep configured-but-offline choices selectable."""
-        runtime = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        runtime = getattr(self.config_entry, "runtime_data", None)
         data = getattr(getattr(runtime, "coordinator", None), "data", None) or {}
         labels: dict[str, str] = {}
         for item in _walk(data.get("hotspot")):
-            if not isinstance(item, Mapping):
-                continue
             mac = item.get("mac")
             if isinstance(mac, str) and _is_mac(mac):
                 labels[mac.lower()] = str(item.get("description") or item.get("name") or mac)

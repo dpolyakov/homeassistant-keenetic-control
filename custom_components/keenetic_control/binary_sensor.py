@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -33,6 +33,9 @@ from .model import (
     parse_usb_media_status,
     parse_usb_storage_devices,
 )
+
+if TYPE_CHECKING:
+    from .runtime import KeeneticConfigEntry
 
 
 @dataclass(frozen=True)
@@ -511,11 +514,11 @@ class KeeneticBinarySensor(CoordinatorEntity[KeeneticCoordinator], BinarySensorE
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: KeeneticConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up router status entities and add discovered interface sensors."""
-    runtime = hass.data[DOMAIN][entry.entry_id]
+    runtime = entry.runtime_data
     coordinator: KeeneticCoordinator = runtime.coordinator
     known: set[str] = set()
 

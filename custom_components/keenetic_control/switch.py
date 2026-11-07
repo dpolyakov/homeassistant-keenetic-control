@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
@@ -18,6 +18,9 @@ from .const import DOMAIN
 from .coordinator import KeeneticCoordinator
 from .device_helpers import router_device_id
 from .entity_model import InterfaceState, build_interface_entity_model
+
+if TYPE_CHECKING:
+    from .runtime import KeeneticConfigEntry
 
 
 def _vpn_interfaces(data: Mapping[str, Any] | None) -> tuple[InterfaceState, ...]:
@@ -49,11 +52,11 @@ def _modem_interfaces(data: Mapping[str, Any] | None) -> tuple[InterfaceState, .
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: KeeneticConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Add administrative switches for known VPN and modem interfaces."""
-    runtime = hass.data[DOMAIN][entry.entry_id]
+    runtime = entry.runtime_data
     coordinator: KeeneticCoordinator = runtime.coordinator
     known: set[str] = set()
 
