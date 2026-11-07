@@ -5,7 +5,7 @@ from __future__ import annotations
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
@@ -19,6 +19,9 @@ from .const import CONF_ADDRESS, CONF_PORT, DOMAIN
 from .coordinator import KeeneticCoordinator
 from .device_helpers import router_device_id
 from .model import normalize_records, parse_hotspot_client, parse_traffic_shape
+
+if TYPE_CHECKING:
+    from .runtime import KeeneticConfigEntry
 
 _MODEM_POWER_CYCLE_PAUSE_MS = 3000
 
@@ -60,9 +63,9 @@ def _client_rows(data: Mapping[str, Any] | None, entry: ConfigEntry) -> list[tup
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: KeeneticConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    runtime = hass.data[DOMAIN][entry.entry_id]
+    runtime = entry.runtime_data
     async_add_entities([KeeneticRebootButton(runtime.coordinator, runtime.api, entry)])
     coordinator: KeeneticCoordinator = runtime.coordinator
     async_add_entities(

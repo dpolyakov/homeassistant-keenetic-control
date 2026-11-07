@@ -14,8 +14,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .api import CannotConnect, InvalidAuth, KeeneticApi, KeeneticError, RciCommandError, UnsupportedResponse
 from .client_registry import selected_client_macs
 from .const import (
-    CONF_SCAN_INTERVAL,
-    DEFAULT_SCAN_INTERVAL,
+    UPDATE_INTERVAL,
     DOMAIN,
     EVENT_SMS,
     EVENT_WAN_CHANGED,
@@ -51,7 +50,7 @@ class KeeneticCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             hass,
             _LOGGER,
             name=f"Keenetic {entry.title}",
-            update_interval=timedelta(seconds=entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)),
+            update_interval=UPDATE_INTERVAL,
         )
         self.entry = entry
         self.api = api

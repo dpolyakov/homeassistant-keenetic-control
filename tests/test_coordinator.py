@@ -889,14 +889,9 @@ class WifiOptionsFlowTests(unittest.IsolatedAsyncioTestCase):
             options={"wifi_enabled_access_points": ["WifiMaster0/AccessPoint0"]},
         )
         flow = _CONFIG_FLOW.KeeneticOptionsFlow()
+        entry.runtime_data = SimpleNamespace(coordinator=SimpleNamespace(async_call=async_call))
         flow.config_entry = entry
-        flow.hass = SimpleNamespace(
-            data={
-                "keenetic_control": {
-                    "entry": SimpleNamespace(coordinator=SimpleNamespace(async_call=async_call))
-                }
-            }
-        )
+        flow.hass = SimpleNamespace()
         rows = [
             {"id": "WifiMaster0/AccessPoint0", "label": "Home Wi-Fi", "enabled": True},
             {"id": "WifiMaster0/AccessPoint1", "label": "GuestWiFi", "enabled": True},

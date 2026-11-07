@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.device_tracker import ScannerEntity, SourceType
 from homeassistant.config_entries import ConfigEntry
@@ -16,11 +16,14 @@ from .const import CONF_CLIENTS, CONF_POLICY_CLIENTS, DOMAIN
 from .device_helpers import router_device_id
 from .model import client_is_live, normalize_records, parse_hotspot_client
 
+if TYPE_CHECKING:
+    from .runtime import KeeneticConfigEntry
+
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: KeeneticConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    runtime = hass.data[DOMAIN][entry.entry_id]
+    runtime = entry.runtime_data
     coordinator = runtime.coordinator
     entities: dict[str, KeeneticClientTracker] = {}
     selected = {
@@ -91,8 +94,8 @@ class KeeneticClientTracker(CoordinatorEntity, ScannerEntity):
         self._attr_unique_id = f"{entry.unique_id}_{mac}"
 
     @property
-    def name(self) -> str:
-        return str(self._current().get("name") or self._current().get("hostname") or self._mac)
+    def name(self) -> None:
+        return None
 
     @property
     def source_type(self) -> SourceType:
@@ -122,7 +125,7 @@ class KeeneticClientTracker(CoordinatorEntity, ScannerEntity):
             "identifiers": {
                 (DOMAIN, f"{self._entry.unique_id}:client:{self._mac}")
             },
-            "name": self.name,
+            "name": str(self._current().get("name") or self._current().get("hostname") or self._mac),
             "via_device_id": router_device_id(self.hass, self._entry),
         }
 

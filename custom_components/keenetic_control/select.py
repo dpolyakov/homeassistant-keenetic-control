@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
@@ -20,6 +20,9 @@ from .const import CONF_POLICY_CLIENTS, DOMAIN
 from .coordinator import KeeneticCoordinator
 from .device_helpers import router_device_id
 from .model import client_is_live, normalize_records, parse_hotspot_client
+
+if TYPE_CHECKING:
+    from .runtime import KeeneticConfigEntry
 
 
 def _policy_rows(value: Any) -> list[Mapping[str, Any]] | None:
@@ -158,11 +161,11 @@ def _cleanup_policy_selects(
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: KeeneticConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Add selectors for configured or discovered client MACs."""
-    runtime = hass.data[DOMAIN][entry.entry_id]
+    runtime = entry.runtime_data
     coordinator: KeeneticCoordinator = runtime.coordinator
     selected = _selected_clients(entry, hass, coordinator.data)
     _cleanup_policy_selects(hass, entry, selected)

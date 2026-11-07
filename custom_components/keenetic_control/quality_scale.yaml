@@ -1,0 +1,63 @@
+# Self-assessment of applicable Bronze rules, not an official HA quality tier.
+# https://contributors.home-assistant.io/core/quality-scale/rules/
+rules:
+  action-setup:
+    status: done
+    comment: Six actions register in async_setup; calls validate the loaded config entry.
+  appropriate-polling:
+    status: done
+    comment: A fixed 30-second coordinator interval balances router load and monitoring latency; README documents custom HA schedules.
+  brands:
+    status: done
+    comment: Custom integration ships brand/icon.png; HACS validates the local brand asset.
+  common-modules:
+    status: done
+    comment: Coordinator and typed runtime live in shared modules; there is no cross-platform base entity to move.
+  config-flow:
+    status: done
+    comment: UI setup and options use selectors and translated field descriptions; credentials stay in entry data.
+  config-flow-test-coverage:
+    status: done
+    comment: scripts/check requires 100% line and branch coverage, including user, reauth, options and recovery.
+  dependency-transparency:
+    status: exempt
+    comment: No external requirements; the MIT-licensed RCI client is included in this repository and uses HA dependencies.
+  docs-actions:
+    status: done
+    comment: README documents all six actions, targets, parameters and response data in Russian and English.
+  docs-conditions:
+    status: exempt
+    comment: The integration provides no custom condition or device-condition platform.
+  docs-high-level-description:
+    status: done
+    comment: README describes local router monitoring and control and links the supported brands.
+  docs-installation-instructions:
+    status: done
+    comment: README covers HACS/manual installation, connection settings and RCI access prerequisites.
+  docs-removal-instructions:
+    status: done
+    comment: README covers deleting router entries, code removal and remaining router settings.
+  docs-triggers:
+    status: exempt
+    comment: No custom trigger platform; documented bus events use the standard HA event trigger.
+  entity-event-setup:
+    status: done
+    comment: CoordinatorEntity manages entity listeners; platform discovery listeners use entry.async_on_unload.
+  entity-unique-id:
+    status: done
+    comment: Entity IDs use router identity plus stable interface, client or peer keys.
+  has-entity-name:
+    status: done
+    comment: All entities enable has_entity_name; the primary client tracker inherits its device name.
+  runtime-data:
+    status: done
+    comment: Typed KeeneticConfigEntry.runtime_data owns runtime; platforms and actions use it directly.
+  test-before-configure:
+    status: done
+    comment: Setup reads version and interface identity before creating an entry; errors remain recoverable.
+  test-before-setup:
+    status: done
+    comment: First coordinator refresh precedes platform forwarding; auth and connection failures are tested.
+  unique-config-entry:
+    status: done
+    comment: A stable router MAC identifies the entry; duplicate registration aborts and has an HA flow test.
