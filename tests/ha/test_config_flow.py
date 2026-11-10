@@ -65,6 +65,23 @@ def mock_setup():
         yield
 
 
+@pytest.fixture(autouse=True)
+def sessions():
+    """Track real sessions without replacing their cookie or cleanup behavior."""
+    created = []
+    factory = flow_module.async_create_clientsession
+
+    def create(*args, **kwargs):
+        session = factory(*args, **kwargs)
+        created.append(session)
+        return session
+
+    with patch.object(flow_module, "async_create_clientsession", side_effect=create):
+        yield created
+    assert all(session.closed for session in created)
+    assert len({id(session.cookie_jar) for session in created}) == len(created)
+
+
 @pytest.fixture
 def api():
     with patch.object(flow_module, "KeeneticApi", autospec=True) as client:
@@ -141,7 +158,9 @@ async def test_user_flow(hass, api, fallback):
         ("address", "invalid_address"),
     ],
 )
-async def test_flow_errors_recover_in_same_flow(hass, api, source, failure, error):
+async def test_flow_errors_recover_in_same_flow(
+    hass, api, sessions, source, failure, error
+):
     entry = existing_entry(hass) if source == SOURCE_REAUTH else None
     result = await start(hass, source, entry)
     data = dict(DATA)
@@ -161,10 +180,14 @@ async def test_flow_errors_recover_in_same_flow(hass, api, source, failure, erro
     result = await finish(hass, result, data)
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": error}
+    assert len(sessions) == 1
+    assert sessions[0].closed
     api.async_connect.side_effect = api.async_get.side_effect = None
     api.async_connect.return_value = {"mac": MAC}
     with patch.object(hass.config_entries, "async_reload", return_value=True) as reload:
         result = await finish(hass, result)
+    assert len(sessions) == 2
+    assert all(session.closed for session in sessions)
     if entry is None:
         assert result["type"] is FlowResultType.CREATE_ENTRY
         assert result["result"].unique_id == MAC

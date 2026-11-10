@@ -940,25 +940,6 @@ def _modem_specs(entry: ConfigEntry, data: Mapping[str, Any]) -> list[_SensorSpe
                 return None
             return sum(message["read"] is False for message in normalized)
 
-        def latest_sms_attributes(values: Mapping[str, Any], ident: str = interface_id) -> dict[str, Any]:
-            current_modems = _mapping(values.get("modems")) or {}
-            current_modem = _mapping(current_modems.get(ident))
-            if current_modem is None or current_modem.get("sms_available") is not True:
-                return {}
-            messages = parse_sms_list_response(current_modem.get("sms"))
-            if messages is None:
-                return {}
-            complete = [message for message in messages if message["complete"] is True]
-            if not complete:
-                return {}
-            message = complete[-1]
-            return {
-                "sms_id": message["id"],
-                "from": message["from"],
-                "timestamp": message["timestamp"],
-                "message": message["text"],
-            }
-
         if sms_available:
             specs.append(
                 _SensorSpec(
@@ -966,7 +947,6 @@ def _modem_specs(entry: ConfigEntry, data: Mapping[str, Any]) -> list[_SensorSpe
                     "Unread SMS",
                     unread_count,
                     state_class=SensorStateClass.MEASUREMENT,
-                    attributes=latest_sms_attributes,
                     device_id=modem_device_id,
                     device_name=label,
                     translation_key="unread_sms",

@@ -107,6 +107,8 @@ USSD-запрос может выполняться до 60 секунд. На �
 
 `request_api` выполняет GET-запросы к RCI. POST-запросы доступны только после включения соответствующей настройки и могут менять состояние роутера. Проверяйте путь и данные перед вызовом.
 
+Сенсор непрочитанных SMS хранит только число сообщений, без отправителя, текста, времени и идентификатора SMS в атрибутах. Подробности доступны через событие `keenetic_control_sms` и действие `list_sms`.
+
 Текст SMS передаётся в событии Home Assistant и может сохраниться в данных автоматизаций и журналах. Учитывайте это при настройке хранения данных.
 
 #### Параметры действий
@@ -267,6 +269,8 @@ actions:
 USSD requests can take up to 60 seconds. Only one USSD request runs per router at a time.
 
 `request_api` performs RCI GET requests. POST requests require the corresponding option to be enabled and may change router state. Check the endpoint and request data before calling the action.
+
+The unread SMS sensor stores only the message count, without the sender, text, timestamp, or SMS ID in its attributes. Message details are available through the `keenetic_control_sms` event and the `list_sms` action.
 
 SMS text is included in the Home Assistant event and may be stored in automation data and logs. Account for this when configuring data retention.
 
