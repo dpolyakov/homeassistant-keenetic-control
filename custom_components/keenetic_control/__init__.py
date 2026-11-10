@@ -9,13 +9,14 @@ from collections.abc import Mapping
 from typing import Any, cast
 
 import voluptuous as vol
+from aiohttp import CookieJar
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.service import async_get_config_entry
 
@@ -281,7 +282,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: KeeneticConfigEntry) -> bool:
     """Set up one router and its platform entities."""
-    session = async_get_clientsession(hass, verify_ssl=False)
+    session = async_create_clientsession(hass, verify_ssl=False, cookie_jar=CookieJar(unsafe=True))
     api = KeeneticApi(
         session,
         entry.data[CONF_ADDRESS],

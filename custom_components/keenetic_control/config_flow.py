@@ -8,14 +8,14 @@ from typing import Any
 from urllib.parse import urlsplit
 
 import voluptuous as vol
-from aiohttp import ClientSession
+from aiohttp import ClientSession, CookieJar
 
 from homeassistant.config_entries import ConfigFlow, OptionsFlowWithReload
 from homeassistant.const import CONF_PASSWORD
 from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.selector import (
     BooleanSelector,
     NumberSelector,
@@ -192,11 +192,14 @@ class KeeneticConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         errors: dict[str, str] = {}
         if user_input is not None:
+            session = async_create_clientsession(
+                self.hass, verify_ssl=False, auto_cleanup=False, cookie_jar=CookieJar(unsafe=True)
+            )
             try:
-                unique_id, version = await _async_validate(
-                    async_get_clientsession(self.hass, verify_ssl=False),
-                    user_input,
-                )
+                try:
+                    unique_id, version = await _async_validate(session, user_input)
+                finally:
+                    session.detach()
             except (CannotConnect, InvalidAuth, UnsupportedResponse) as err:
                 errors["base"] = _ERRORS[type(err)]
             except ValueError:
@@ -235,11 +238,14 @@ class KeeneticConfigFlow(ConfigFlow, domain=DOMAIN):
         await self.async_set_unique_id(entry.unique_id)
         errors: dict[str, str] = {}
         if user_input is not None:
+            session = async_create_clientsession(
+                self.hass, verify_ssl=False, auto_cleanup=False, cookie_jar=CookieJar(unsafe=True)
+            )
             try:
-                unique_id, _version = await _async_validate(
-                    async_get_clientsession(self.hass, verify_ssl=False),
-                    user_input,
-                )
+                try:
+                    unique_id, _version = await _async_validate(session, user_input)
+                finally:
+                    session.detach()
             except (CannotConnect, InvalidAuth, UnsupportedResponse) as err:
                 errors["base"] = _ERRORS[type(err)]
             except ValueError:

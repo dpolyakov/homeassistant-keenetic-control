@@ -84,7 +84,7 @@ def _install_homeassistant_stubs() -> None:
     fake_helpers.device_registry = fake_devices
     fake_helpers.entity_registry = fake_entities
     fake_aiohttp_client = types.ModuleType("homeassistant.helpers.aiohttp_client")
-    fake_aiohttp_client.async_get_clientsession = lambda *args, **kwargs: None
+    fake_aiohttp_client.async_create_clientsession = lambda *args, **kwargs: None
     fake_helpers.aiohttp_client = fake_aiohttp_client
     fake_selector = types.ModuleType("homeassistant.helpers.selector")
 
